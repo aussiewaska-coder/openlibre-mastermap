@@ -4,7 +4,7 @@
  */
 
 import maplibregl from 'maplibre-gl'
-import stateManager from '../core/stateManager.js'
+import stateManager from '../../core/stateManager.js'
 
 /**
  * Create landmark label markers

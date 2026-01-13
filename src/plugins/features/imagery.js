@@ -3,8 +3,8 @@
  * Handles basemap switching between satellite and OpenStreetMap
  */
 
-import mapManager from '../core/mapManager.js'
-import stateManager from '../core/stateManager.js'
+import mapManager from '../../core/mapManager.js'
+import stateManager from '../../core/stateManager.js'
 
 class ImageryFeature {
   /**

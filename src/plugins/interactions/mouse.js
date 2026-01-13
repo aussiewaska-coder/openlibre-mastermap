@@ -3,8 +3,8 @@
  * Manages mouse/click event listeners (Cmd+Click targeting)
  */
 
-import mapManager from '../core/mapManager.js'
-import cameraFeature from '../features/camera.js'
+import mapManager from '../../core/mapManager.js'
+import cameraFeature from '../../features/camera.js'
 
 /**
  * Setup mouse event listeners

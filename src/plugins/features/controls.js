@@ -3,12 +3,12 @@
  * Handles all control panel interactions and event listeners
  */
 
-import stateManager from '../core/stateManager.js'
+import stateManager from '../../core/stateManager.js'
 import terrainFeature from './terrain.js'
 import imageryFeature from './imagery.js'
 import cameraFeature from './camera.js'
-import { updateInfoPanel } from '../ui/infoPanel.js'
-import mapManager from '../core/mapManager.js'
+import { updateInfoPanel } from '../../ui/infoPanel.js'
+import mapManager from '../../core/mapManager.js'
 
 class ControlsFeature {
   /**

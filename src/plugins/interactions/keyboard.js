@@ -3,8 +3,8 @@
  * Manages keyboard event listeners
  */
 
-import stateManager from '../core/stateManager.js'
-import cameraFeature from '../features/camera.js'
+import stateManager from '../../core/stateManager.js'
+import cameraFeature from '../../features/camera.js'
 
 /**
  * Setup keyboard event listeners

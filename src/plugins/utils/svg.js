@@ -3,7 +3,7 @@
  * Helper functions for creating and managing SVG elements
  */
 
-import { CROSSHAIR_CONFIG } from '../config/defaults.js'
+import { CROSSHAIR_CONFIG } from '../../config/defaults.js'
 
 /**
  * Create animated crosshair SVG element

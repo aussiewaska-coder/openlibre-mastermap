@@ -3,8 +3,8 @@
  * Manages the initial fade-out animation when tiles are loaded
  */
 
-import mapManager from '../core/mapManager.js'
-import stateManager from '../core/stateManager.js'
+import mapManager from '../../core/mapManager.js'
+import stateManager from '../../core/stateManager.js'
 
 /**
  * Setup loading animation listeners

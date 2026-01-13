@@ -3,10 +3,10 @@
  * Handles DEM setup, hillshade layer, and terrain exaggeration control
  */
 
-import mapManager from '../core/mapManager.js'
-import stateManager from '../core/stateManager.js'
-import { DEM_SOURCE } from '../config/tiles.js'
-import { MAP_CONFIG } from '../config/defaults.js'
+import mapManager from '../../core/mapManager.js'
+import stateManager from '../../core/stateManager.js'
+import { DEM_SOURCE } from '../../config/tiles.js'
+import { MAP_CONFIG } from '../../config/defaults.js'
 
 class TerrainFeature {
   constructor() {
