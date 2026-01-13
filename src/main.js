@@ -5,17 +5,17 @@
 
 import mapManager from './core/mapManager.js'
 import stateManager from './core/stateManager.js'
-import terrainFeature from './features/terrain.js'
-import imageryFeature from './features/imagery.js'
-import cameraFeature from './features/camera.js'
-import controlsFeature from './features/controls.js'
+import terrainFeature from './plugins/features/terrain.js'
+import imageryFeature from './plugins/features/imagery.js'
+import cameraFeature from './plugins/features/camera.js'
+import controlsFeature from './plugins/features/controls.js'
 
-import { createLandmarkMarkers } from './ui/landmarks.js'
+import { createLandmarkMarkers } from './plugins/ui/landmarks.js'
 import { AUSTRALIA_LANDMARKS } from './config/landmarks.js'
 
-import { setupKeyboardListeners } from './interactions/keyboard.js'
-import { setupMouseListeners } from './interactions/mouse.js'
-import { setupLoadingAnimation } from './interactions/loadingAnimation.js'
+import { setupKeyboardListeners } from './plugins/interactions/keyboard.js'
+import { setupMouseListeners } from './plugins/interactions/mouse.js'
+import { setupLoadingAnimation } from './plugins/interactions/loadingAnimation.js'
 
 /**
  * Initialize the application

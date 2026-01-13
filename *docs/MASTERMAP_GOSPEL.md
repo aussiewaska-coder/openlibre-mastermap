@@ -171,7 +171,7 @@ REDIS_URL=redis://...
 
 ## 2. Canonical File Structure
 
-> **All prior `src/features/*` paths are deprecated.**  
+> **All prior `src/plugins/features/*` paths are deprecated.**  
 > The canonical location is now `src/plugins/features/*`.
 
 ```
@@ -907,31 +907,3 @@ The architecture is:
 
 ---
 
-## Appendix A — 100% Compliance Rename/Replace Commands
-
-You asked for “full and total replace” plus verification.
-
-> **Mac/Linux (bash/zsh) — replace + verify**
-
-```bash
-# 0) Create the new folder (if not already)
-mkdir -p src/plugins/features
-
-# 1) Move the feature files
-git mv src/features src/plugins/features
-
-# 2) Replace all import paths + string refs (JS/TS/MD/CSS/JSON)
-rg -n "(['\"])\\.?/?(src/)?features/" .
-perl -pi -e "s#(['\"])\\.?/?(src/)?features/#\$1./plugins/features/#g"   $(rg -l "(['\"])\\.?/?(src/)?features/" .)
-
-# 3) Replace remaining bare 'features/' occurrences in docs (graphs, text)
-rg -n "(^|\\W)features/" .
-perl -pi -e "s#(^|\\W)features/#\$1plugins/features/#g"   $(rg -l "(^|\\W)features/" .)
-
-# 4) ✅ Verification: must return ZERO hits
-rg -n "(^|\\W)features/" src || true
-rg -n "src/features" . || true
-rg -n "'\\./features/|\\"\\./features/" . || true
-```
-
----
