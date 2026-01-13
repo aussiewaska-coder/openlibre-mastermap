@@ -8,56 +8,7 @@
   <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
-  <div id="map-fade"></div>
   <div id="map"></div>
-
-  <div class="controls">
-    <div class="control-group">
-      <h3>Controls</h3>
-
-      <div class="control-item">
-        <label for="exaggeration-slider">Terrain Exaggeration: <span id="exaggeration-value">1.0</span>x</label>
-        <input type="range" id="exaggeration-slider" min="0.5" max="3" step="0.1" value="1.0">
-      </div>
-
-      <div class="control-item">
-        <label>
-          <input type="checkbox" id="hillshade-toggle" checked>
-          Show Hillshade
-        </label>
-      </div>
-
-      <div class="control-item">
-        <label>
-          <input type="checkbox" id="satellite-toggle" checked>
-          Satellite Imagery
-        </label>
-      </div>
-
-      <div class="control-item">
-        <button id="pitch-button">Enter 3D Mode (Right-click to rotate)</button>
-      </div>
-
-      <div class="control-item">
-        <button id="orbit-button">Start Orbit (45°)</button>
-      </div>
-
-      <div class="control-item">
-        <button id="australia-button">🌏 Australia View</button>
-      </div>
-
-      <div class="control-item">
-        <button id="flight-button">Random Flight</button>
-      </div>
-    </div>
-
-    <div class="info-panel">
-      <p><small>Terrain data: AWS Marketplace (Terrarium)</small></p>
-      <p><small id="zoom-info">Zoom: —</small></p>
-      <p><small id="center-info">Center: —</small></p>
-    </div>
-  </div>
-
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

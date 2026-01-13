@@ -1,6 +1,6 @@
 /**
  * Imagery Feature Module
- * Handles basemap switching between satellite and OpenStreetMap
+ * Handles basemap layer setup
  */
 
 import mapManager from '../../core/mapManager.js'
@@ -8,40 +8,20 @@ import stateManager from '../../core/stateManager.js'
 
 class ImageryFeature {
   /**
-   * Toggle between satellite and OSM basemap
-   */
-  toggleBasemap(useSatellite) {
-    const osmVisibility = useSatellite ? 'none' : 'visible'
-    const satelliteVisibility = useSatellite ? 'visible' : 'none'
-
-    mapManager.setLayoutProperty('osm-basemap', 'visibility', osmVisibility)
-    mapManager.setLayoutProperty('satellite-basemap', 'visibility', satelliteVisibility)
-
-    stateManager.set('satelliteEnabled', useSatellite)
-
-    const name = useSatellite ? 'Satellite Imagery' : 'OpenStreetMap'
-    console.log(`✓ Switched to ${name}`)
-  }
-
-  /**
-   * Get current basemap
-   */
-  isSatelliteEnabled() {
-    return stateManager.get('satelliteEnabled')
-  }
-
-  /**
-   * Set to satellite
+   * Initialize satellite basemap
    */
   setSatellite() {
-    this.toggleBasemap(true)
+    mapManager.setLayoutProperty('osm-basemap', 'visibility', 'none')
+    mapManager.setLayoutProperty('satellite-basemap', 'visibility', 'visible')
+    stateManager.set('satelliteEnabled', true)
+    console.log('✓ Satellite imagery enabled')
   }
 
   /**
-   * Set to OSM
+   * Cleanup
    */
-  setOSM() {
-    this.toggleBasemap(false)
+  cleanup() {
+    // Cleanup handled by mapManager
   }
 }
 
