@@ -4,7 +4,7 @@
  */
 
 import mapManager from '../../core/mapManager.js'
-import cameraFeature from '../../features/camera.js'
+import cameraFeature from '../features/camera.js'
 
 /**
  * Setup mouse event listeners

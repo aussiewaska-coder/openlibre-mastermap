@@ -6,7 +6,7 @@
 import mapManager from '../../core/mapManager.js'
 import stateManager from '../../core/stateManager.js'
 import { CAMERA_CONFIG, AUSTRALIA_VIEW } from '../../config/defaults.js'
-import { createCrosshairSVG } from '../../utils/svg.js'
+import { createCrosshairSVG } from '../utils/svg.js'
 import maplibregl from 'maplibre-gl'
 
 class CameraFeature {
