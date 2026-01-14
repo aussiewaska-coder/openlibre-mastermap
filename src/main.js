@@ -63,8 +63,8 @@ async function initialize() {
 
         // Ultra-smooth orbit animation
         // Duration: 60 seconds for one complete rotation cycle
-        // Bearing increment: 0.05 degrees per frame = smooth, slow rotation
-        animationsPlugin.orbitCenter(60000, 0.05)
+        // 6 degrees per second = 360° in 60 seconds = one full rotation
+        animationsPlugin.orbitCenter(60000, 6)
       }
     })
 

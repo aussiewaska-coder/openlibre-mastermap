@@ -27,48 +27,48 @@ export default {
    * @param {number} durationMs - Total animation duration in milliseconds
    * @param {number} longitudeIncrement - Longitude change per frame (degrees)
    */
-  orbitCenter(durationMs = 30000, longitudeIncrement = 0.01) {
+  orbitCenter(durationMs = 30000, degreesPerSecond = 10) {
     if (this.animationState.isAnimating) {
       console.warn('Animation already in progress')
       return
     }
 
     const map = mapManager.getMap()
+    const center = map.getCenter()
     const startTime = Date.now()
-    const startCenter = map.getCenter()
-    let currentLng = startCenter.lng
+    const startBearing = map.getBearing()
 
     this.animationState.isAnimating = true
     this.animationState.currentAnimation = 'orbit'
 
-    const animate = () => {
+    const animate = (timestamp) => {
       const elapsed = Date.now() - startTime
 
       if (elapsed >= durationMs) {
-        // Animation complete - reset to start
-        map.setCenter(startCenter)
+        // Animation complete - return to start bearing
+        map.rotateTo(startBearing, { duration: 0 })
         this.animationState.isAnimating = false
         this.animationState.currentAnimation = null
-        console.log('✓ Horizontal pan animation complete')
+        this.animationState.animationId = null
+        console.log('✓ Orbit animation complete')
         return
       }
 
-      // Update longitude for continuous horizontal panning
-      currentLng = (currentLng + longitudeIncrement) % 360
-      // Normalize to -180 to 180 range
-      const normalizedLng = currentLng > 180 ? currentLng - 360 : currentLng
-      
-      map.setCenter({
-        lng: normalizedLng,
-        lat: startCenter.lat
-      })
+      // Calculate bearing based on elapsed time
+      // degreesPerSecond determines rotation speed
+      const secondsElapsed = elapsed / 1000
+      const newBearing = (startBearing + (secondsElapsed * degreesPerSecond)) % 360
+
+      // Rotate camera to new bearing around fixed center
+      // duration: 0 means instant rotation (smoothness from requestAnimationFrame)
+      map.rotateTo(newBearing, { duration: 0 })
 
       // Continue animation
       this.animationState.animationId = requestAnimationFrame(animate)
     }
 
     this.animationState.animationId = requestAnimationFrame(animate)
-    console.log('✓ Horizontal pan animation started')
+    console.log(`✓ Orbit animation started: ${degreesPerSecond}°/sec around [${center.lng.toFixed(2)}, ${center.lat.toFixed(2)}]`)
   },
 
   /**
@@ -223,6 +223,9 @@ export default {
    */
   stop() {
     const map = mapManager.getMap()
+
+    // CRITICAL: Stop MapLibre's camera animation
+    map.stop()
 
     if (this.animationState.animationId) {
       cancelAnimationFrame(this.animationState.animationId)
