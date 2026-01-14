@@ -74,13 +74,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Call OpenWebNinja Waze API with X-API-Key header
-    const owResp = await fetch(url.toString(), {
-      headers: { 'x-api-key': Env.OPENWEBNINJA_API_KEY },
+    const requestUrl = url.toString()
+    const requestHeaders = { 'x-api-key': Env.OPENWEBNINJA_API_KEY }
+
+    console.log('DEBUG: OpenWebNinja request', {
+      url: requestUrl,
+      keyLength: Env.OPENWEBNINJA_API_KEY.length,
+      headers: requestHeaders,
+    })
+
+    const owResp = await fetch(requestUrl, {
+      headers: requestHeaders,
       cache: 'no-store',
     })
 
     if (!owResp.ok) {
-      console.error('OpenWebNinja API error:', owResp.status)
+      console.error('OpenWebNinja API error:', owResp.status, await owResp.text())
       return res.status(502).json({
         status: 'error',
         code: 'OPENWEBNINJA_UPSTREAM_ERROR',
