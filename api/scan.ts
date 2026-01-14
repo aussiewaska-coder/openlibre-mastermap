@@ -53,8 +53,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const bottomLeft = `${body.bbox.s},${body.bbox.w}`
     const topRight = `${body.bbox.n},${body.bbox.e}`
 
-    // Build URL using /waze/alerts-and-jams endpoint (same as working project)
-    const targetUrl = `https://api.openwebninja.com/waze/alerts-and-jams?bottom_left=${bottomLeft}&top_right=${topRight}`
+    // Build URL using /waze/alerts-and-jams endpoint with all alert types
+    const targetUrl = `https://api.openwebninja.com/waze/alerts-and-jams?bottom_left=${bottomLeft}&top_right=${topRight}&max_alerts=500&max_jams=500`
 
     console.log('DEBUG: OpenWebNinja request', {
       url: targetUrl,
@@ -68,15 +68,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
     if (!owResp.ok) {
-      console.error('OpenWebNinja API error:', owResp.status, await owResp.text())
+      const errText = await owResp.text()
+      console.error('OpenWebNinja API error:', owResp.status, errText)
       return res.status(502).json({
         status: 'error',
         code: 'OPENWEBNINJA_UPSTREAM_ERROR',
         http: owResp.status,
+        message: errText,
       })
     }
 
     const raw = await owResp.json()
+    console.log('DEBUG: OpenWebNinja response', { alertsCount: raw.alerts?.length, jamsCount: raw.jams?.length })
+
     const alerts = Array.isArray(raw.alerts) ? raw.alerts : []
     const jams = Array.isArray(raw.jams) ? raw.jams : []
 
