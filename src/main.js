@@ -62,19 +62,22 @@ async function initialize() {
         const centerPoint = bounds.getCenter()
         const currentZoom = map.getZoom()
 
-        // Fly to oblique viewing angle
-        const targetPitch = 60
-        const targetBearing = 45 // Northeast view angle
+        // Get current bearing to keep camera locked on center
+        const currentBearing = map.getBearing()
 
+        // Adaptive pitch based on zoom level
+        const targetPitch = Math.max(20, 65 - (currentZoom * 3))
+
+        // Fly to center with CURRENT bearing - keeps camera locked
         map.flyTo({
-          center: centerPoint,  // CENTER STAYS FIXED AT BOX CENTER
-          zoom: currentZoom,    // Keep zoom level same
-          bearing: targetBearing,
+          center: centerPoint,
+          zoom: currentZoom,
+          bearing: currentBearing,
           pitch: targetPitch,
           duration: 2000
         })
 
-        console.log(`✓ Flying to oblique view: bearing ${targetBearing}°, pitch ${targetPitch}°`)
+        console.log(`✓ Flying to adaptive pitch, center locked`)
 
         // Start orbital animation after flyTo completes
         setTimeout(() => {
