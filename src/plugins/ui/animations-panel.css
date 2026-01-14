@@ -1,0 +1,532 @@
+/**
+ * Animations Panel UI Styles
+ * Responsive design: Desktop (side panel) + Mobile (bottom sheet)
+ */
+
+:root {
+  --anim-primary-color: #2563eb;
+  --anim-hover-color: #1d4ed8;
+  --anim-active-color: #1e40af;
+  --anim-stop-color: #dc2626;
+  --anim-bg-color: rgba(255, 255, 255, 0.95);
+  --anim-border-color: #e5e7eb;
+  --anim-text-color: #374151;
+  --anim-text-secondary: #6b7280;
+  --anim-border-radius: 4px;
+  --anim-spacing: 12px;
+  --anim-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --anim-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+  --anim-touch-target: 44px;
+  --anim-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --anim-transition: 0.3s ease;
+}
+
+/* ============================================================================
+   1. TOGGLE BUTTON
+   ============================================================================ */
+
+.animations-toggle {
+  position: absolute;
+  bottom: 60px;
+  left: 10px;
+  width: var(--anim-touch-target);
+  height: var(--anim-touch-target);
+  background: var(--anim-bg-color);
+  border: none;
+  border-radius: var(--anim-border-radius);
+  cursor: pointer;
+  box-shadow: var(--anim-shadow);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--anim-text-color);
+  transition: all var(--anim-transition);
+  font-family: var(--anim-font-family);
+}
+
+.animations-toggle:hover {
+  background: var(--anim-hover-color);
+  color: white;
+  transform: scale(1.05);
+  box-shadow: var(--anim-shadow-lg);
+}
+
+.animations-toggle[aria-expanded="true"] {
+  background: var(--anim-primary-color);
+  color: white;
+}
+
+.animations-toggle svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2;
+}
+
+/* ============================================================================
+   2. PANEL BASE
+   ============================================================================ */
+
+.animations-panel {
+  position: absolute;
+  background: var(--anim-bg-color);
+  border-radius: var(--anim-border-radius);
+  box-shadow: var(--anim-shadow-lg);
+  z-index: 1001;
+  font-family: var(--anim-font-family);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  /* Smooth scrolling on mobile */
+  transition: transform var(--anim-transition), opacity var(--anim-transition);
+  color: var(--anim-text-color);
+}
+
+.animations-panel[hidden] {
+  display: none;
+}
+
+/* Desktop Layout: Side panel from left */
+@media (min-width: 768px) {
+  .animations-panel {
+    left: 70px;
+    bottom: 60px;
+    width: 320px;
+    max-height: 80vh;
+    border-radius: var(--anim-border-radius);
+    transform: translateX(0);
+  }
+
+  .animations-panel[hidden] {
+    transform: translateX(-20px);
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* Mobile Layout: Bottom sheet */
+@media (max-width: 767px) {
+  .animations-panel {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: 60vh;
+    border-radius: 12px 12px 0 0;
+    transform: translateY(0);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .animations-panel[hidden] {
+    transform: translateY(100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Mobile drag handle */
+  .animations-panel::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #d1d5db;
+    border-radius: 2px;
+    margin: 8px auto 0;
+  }
+}
+
+/* ============================================================================
+   3. PANEL HEADER
+   ============================================================================ */
+
+.animations-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--anim-spacing);
+  border-bottom: 1px solid var(--anim-border-color);
+}
+
+.animations-panel-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--anim-text-color);
+}
+
+.animations-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--anim-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--anim-transition);
+}
+
+.animations-close:hover {
+  color: var(--anim-text-color);
+}
+
+.animations-close svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+/* ============================================================================
+   4. STATUS INDICATOR
+   ============================================================================ */
+
+.animations-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px var(--anim-spacing);
+  background: #f3f4f6;
+  font-size: 12px;
+  color: var(--anim-text-secondary);
+  margin: var(--anim-spacing) 0 0 0;
+}
+
+.animations-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.animations-status-dot.animating {
+  background: #f59e0b;
+  animation: animations-pulse 1.5s infinite;
+}
+
+@keyframes animations-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.animations-status-text {
+  flex: 1;
+  min-height: 16px;
+}
+
+/* ============================================================================
+   5. PRESET BUTTONS
+   ============================================================================ */
+
+.animations-presets {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--anim-spacing);
+  padding: var(--anim-spacing);
+}
+
+.animations-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: var(--anim-touch-target);
+  padding: 8px 6px;
+  background: white;
+  border: 1px solid var(--anim-border-color);
+  border-radius: var(--anim-border-radius);
+  cursor: pointer;
+  font-family: var(--anim-font-family);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--anim-text-color);
+  transition: all 0.2s ease;
+}
+
+.animations-btn:hover:not(:disabled) {
+  background: var(--anim-primary-color);
+  color: white;
+  border-color: var(--anim-primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.animations-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.animations-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.animations-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+/* Stop button - full width, red color */
+.animations-btn-stop {
+  grid-column: 1 / -1;
+  background: var(--anim-stop-color);
+  color: white;
+  border-color: var(--anim-stop-color);
+}
+
+.animations-btn-stop:hover:not(:disabled) {
+  background: #991b1b;
+  border-color: #991b1b;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+/* Mobile button sizing */
+@media (max-width: 767px) {
+  .animations-btn {
+    min-height: 48px;
+    font-size: 11px;
+  }
+
+  .animations-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* ============================================================================
+   6. ADVANCED CONTROLS TOGGLE
+   ============================================================================ */
+
+.animations-advanced-toggle {
+  width: 100%;
+  padding: 10px var(--anim-spacing);
+  background: none;
+  border: none;
+  border-top: 1px solid var(--anim-border-color);
+  border-bottom: none;
+  cursor: pointer;
+  font-family: var(--anim-font-family);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--anim-primary-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background var(--anim-transition);
+}
+
+.animations-advanced-toggle:hover {
+  background: #f9fafb;
+}
+
+.animations-advanced-toggle[aria-expanded="true"] {
+  background: #f3f4f6;
+}
+
+.animations-chevron {
+  transition: transform var(--anim-transition);
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.animations-advanced-toggle[aria-expanded="true"] .animations-chevron {
+  transform: rotate(180deg);
+}
+
+/* ============================================================================
+   7. ADVANCED CONTROLS SECTION
+   ============================================================================ */
+
+.animations-advanced {
+  padding: var(--anim-spacing);
+  border-top: 1px solid var(--anim-border-color);
+}
+
+.animations-advanced[hidden] {
+  display: none;
+}
+
+.animations-control-group {
+  margin-bottom: var(--anim-spacing);
+}
+
+.animations-control-group[hidden] {
+  display: none;
+}
+
+.animations-control-group:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================================================
+   8. LABELS AND VALUES
+   ============================================================================ */
+
+.animations-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--anim-text-secondary);
+  font-family: var(--anim-font-family);
+  gap: 8px;
+}
+
+.animations-value {
+  font-weight: 600;
+  color: var(--anim-primary-color);
+  min-width: 35px;
+  text-align: right;
+}
+
+/* ============================================================================
+   9. SLIDERS
+   ============================================================================ */
+
+.animations-slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--anim-border-color);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  margin-bottom: var(--anim-spacing);
+  transition: background 0.2s ease;
+}
+
+.animations-slider:hover {
+  background: #d1d5db;
+}
+
+.animations-slider:focus {
+  outline: 2px solid var(--anim-primary-color);
+  outline-offset: 2px;
+}
+
+/* Webkit thumb (Chrome, Safari, Edge) */
+.animations-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--anim-primary-color);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+  transition: all 0.2s ease;
+}
+
+.animations-slider::-webkit-slider-thumb:hover {
+  width: 22px;
+  height: 22px;
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
+}
+
+.animations-slider::-webkit-slider-thumb:active {
+  width: 20px;
+  height: 20px;
+}
+
+/* Firefox thumb */
+.animations-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--anim-primary-color);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+  transition: all 0.2s ease;
+}
+
+.animations-slider::-moz-range-thumb:hover {
+  width: 22px;
+  height: 22px;
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
+}
+
+.animations-slider::-moz-range-track {
+  background: transparent;
+  border: none;
+}
+
+/* Mobile slider sizing */
+@media (max-width: 767px) {
+  .animations-slider::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  .animations-slider::-webkit-slider-thumb:hover {
+    width: 24px;
+    height: 24px;
+  }
+
+  .animations-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* ============================================================================
+   10. SCROLLBAR STYLING
+   ============================================================================ */
+
+.animations-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.animations-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.animations-panel::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.animations-panel::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ============================================================================
+   11. FOCUS AND KEYBOARD NAVIGATION
+   ============================================================================ */
+
+/* High contrast focus indicators for accessibility */
+.animations-btn:focus,
+.animations-close:focus,
+.animations-advanced-toggle:focus {
+  outline: 2px solid var(--anim-primary-color);
+  outline-offset: 2px;
+}
+
+/* Reduce outline offset for buttons inside panels */
+@media (max-width: 767px) {
+  .animations-btn:focus {
+    outline-offset: -2px;
+  }
+}
+
+/* ============================================================================
+   12. PRINT STYLES
+   ============================================================================ */
+
+@media print {
+  .animations-toggle,
+  .animations-panel {
+    display: none !important;
+  }
+}

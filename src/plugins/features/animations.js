@@ -1,0 +1,288 @@
+/**
+ * Animations Plugin - Camera movement animations using MapLibre official API
+ * Provides orbit, flyover, and camera path animations
+ * Reference: https://maplibre.org/maplibre-gl-js/docs/examples/animate-map-camera-around-a-point/
+ */
+
+import mapManager from '../../core/mapManager.js'
+
+export default {
+  // Animation state
+  animationState: {
+    isAnimating: false,
+    currentAnimation: null,
+    animationId: null,
+    startTime: null
+  },
+
+  /**
+   * Initialize animations plugin
+   */
+  initialize() {
+    console.log('✓ Animations plugin initialized')
+  },
+
+  /**
+   * Horizontal pan animation - pans camera horizontally across the globe
+   * @param {number} durationMs - Total animation duration in milliseconds
+   * @param {number} longitudeIncrement - Longitude change per frame (degrees)
+   */
+  orbitCenter(durationMs = 30000, longitudeIncrement = 0.01) {
+    if (this.animationState.isAnimating) {
+      console.warn('Animation already in progress')
+      return
+    }
+
+    const map = mapManager.getMap()
+    const startTime = Date.now()
+    const startCenter = map.getCenter()
+    let currentLng = startCenter.lng
+
+    this.animationState.isAnimating = true
+    this.animationState.currentAnimation = 'orbit'
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime
+
+      if (elapsed >= durationMs) {
+        // Animation complete - reset to start
+        map.setCenter(startCenter)
+        this.animationState.isAnimating = false
+        this.animationState.currentAnimation = null
+        console.log('✓ Horizontal pan animation complete')
+        return
+      }
+
+      // Update longitude for continuous horizontal panning
+      currentLng = (currentLng + longitudeIncrement) % 360
+      // Normalize to -180 to 180 range
+      const normalizedLng = currentLng > 180 ? currentLng - 360 : currentLng
+      
+      map.setCenter({
+        lng: normalizedLng,
+        lat: startCenter.lat
+      })
+
+      // Continue animation
+      this.animationState.animationId = requestAnimationFrame(animate)
+    }
+
+    this.animationState.animationId = requestAnimationFrame(animate)
+    console.log('✓ Horizontal pan animation started')
+  },
+
+  /**
+   * Smooth camera flyover - zoom in, pan, and return to original position
+   * @param {number} targetZoom - Zoom level to fly to
+   * @param {number} targetPitch - Pitch angle (0-85)
+   * @param {number} durationMs - Animation duration
+   */
+  flyover(targetZoom = 12, targetPitch = 60, durationMs = 5000) {
+    if (this.animationState.isAnimating) {
+      console.warn('Animation already in progress')
+      return
+    }
+
+    const map = mapManager.getMap()
+    const startCenter = map.getCenter()
+    const startZoom = map.getZoom()
+    const startPitch = map.getPitch()
+    const startBearing = map.getBearing()
+
+    this.animationState.isAnimating = true
+    this.animationState.currentAnimation = 'flyover'
+
+    // Fly to target position
+    map.flyTo({
+      center: startCenter,
+      zoom: targetZoom,
+      pitch: targetPitch,
+      bearing: startBearing,
+      duration: durationMs * 0.6, // 60% of total time for approach
+      easing: (t) => t // Linear easing
+    })
+
+    // After approach, return to original position
+    setTimeout(() => {
+      map.flyTo({
+        center: startCenter,
+        zoom: startZoom,
+        pitch: startPitch,
+        bearing: startBearing,
+        duration: durationMs * 0.4, // 40% of total time for return
+        easing: (t) => t // Linear easing
+      })
+
+      setTimeout(() => {
+        this.animationState.isAnimating = false
+        this.animationState.currentAnimation = null
+        console.log('✓ Flyover animation complete')
+      }, durationMs * 0.4)
+    }, durationMs * 0.6)
+
+    console.log('✓ Flyover animation started')
+  },
+
+  /**
+   * Animate bearing rotation to a target bearing
+   * @param {number} targetBearing - Target bearing (0-360)
+   * @param {number} durationMs - Animation duration
+   */
+  rotateTo(targetBearing, durationMs = 3000) {
+    if (this.animationState.isAnimating) {
+      console.warn('Animation already in progress')
+      return
+    }
+
+    const map = mapManager.getMap()
+
+    this.animationState.isAnimating = true
+    this.animationState.currentAnimation = 'rotate'
+
+    map.easeTo({
+      bearing: targetBearing,
+      duration: durationMs,
+      easing: (t) => t * (2 - t) // easeOutQuad
+    })
+
+    setTimeout(() => {
+      this.animationState.isAnimating = false
+      this.animationState.currentAnimation = null
+      console.log('✓ Rotation animation complete')
+    }, durationMs)
+
+    console.log('✓ Rotation animation started')
+  },
+
+  /**
+   * Animate pitch (3D tilt) to a target angle
+   * @param {number} targetPitch - Target pitch (0-85)
+   * @param {number} durationMs - Animation duration
+   */
+  pitchTo(targetPitch, durationMs = 2000) {
+    if (this.animationState.isAnimating) {
+      console.warn('Animation already in progress')
+      return
+    }
+
+    const map = mapManager.getMap()
+
+    this.animationState.isAnimating = true
+    this.animationState.currentAnimation = 'pitch'
+
+    map.easeTo({
+      pitch: targetPitch,
+      duration: durationMs,
+      easing: (t) => t * (2 - t) // easeOutQuad
+    })
+
+    setTimeout(() => {
+      this.animationState.isAnimating = false
+      this.animationState.currentAnimation = null
+      console.log('✓ Pitch animation complete')
+    }, durationMs)
+
+    console.log('✓ Pitch animation started')
+  },
+
+  /**
+   * Animate camera to a new location
+   * @param {object} options - MapLibre FlyToOptions or EaseToOptions
+   * @param {boolean} useFlying - Use flyTo (curved path) vs easeTo (direct)
+   */
+  animateTo(options, useFlying = true) {
+    if (this.animationState.isAnimating) {
+      console.warn('Animation already in progress')
+      return
+    }
+
+    const map = mapManager.getMap()
+
+    this.animationState.isAnimating = true
+    this.animationState.currentAnimation = 'custom'
+
+    const duration = options.duration || 3000
+
+    if (useFlying) {
+      map.flyTo(options)
+    } else {
+      map.easeTo(options)
+    }
+
+    setTimeout(() => {
+      this.animationState.isAnimating = false
+      this.animationState.currentAnimation = null
+      console.log('✓ Animation complete')
+    }, duration)
+
+    console.log('✓ Custom animation started')
+  },
+
+  /**
+   * Stop any running animation
+   */
+  stop() {
+    const map = mapManager.getMap()
+
+    if (this.animationState.animationId) {
+      cancelAnimationFrame(this.animationState.animationId)
+      this.animationState.animationId = null
+    }
+
+    this.animationState.isAnimating = false
+    this.animationState.currentAnimation = null
+
+    console.log('✓ Animation stopped')
+  },
+
+  /**
+   * Check if animation is currently running
+   */
+  isAnimating() {
+    return this.animationState.isAnimating
+  },
+
+  /**
+   * Get current animation type
+   */
+  getCurrentAnimation() {
+    return this.animationState.currentAnimation
+  },
+
+  /**
+   * Enable animations (no-op for this plugin, but for interface consistency)
+   */
+  enable() {
+    console.log('✓ Animations enabled')
+  },
+
+  /**
+   * Disable animations - stops any running animation
+   */
+  disable() {
+    this.stop()
+    console.log('✓ Animations disabled')
+  },
+
+  /**
+   * Update animation configuration at runtime
+   * @param {object} config - Configuration object
+   */
+  update(config) {
+    // Config could include default durations, easing functions, etc.
+    if (config.defaultDuration) {
+      this.defaultDuration = config.defaultDuration
+    }
+    if (config.defaultBearingIncrement) {
+      this.defaultBearingIncrement = config.defaultBearingIncrement
+    }
+  },
+
+  /**
+   * Cleanup - stop all animations
+   */
+  cleanup() {
+    this.stop()
+    console.log('✓ Animations plugin cleaned up')
+  }
+}

@@ -37,13 +37,9 @@ this is that system.
 ## 🧠 Core Capabilities (via Plugins)
 
 ### Shipping Plugins
-- 🏔️ **Terrain Plugin** — DEM‑based 3D terrain with live exaggeration
-- 🌄 **Hillshade Plugin** — Shaded relief from Terrarium DEM tiles
-- 🗺️ **Australia View Plugin** — Default continent framing + bounds safety
-- 🎥 **Camera Plugin** — Orbit, flight, targeting, 3D pitch
-- 🎛️ **Controls Plugin** — UI → feature wiring (no logic in UI)
-- 🧩 **UI Plugins** — Optional panels, landmarks, controls
-- ⌨️ **Interaction Plugins** — Keyboard, mouse, touch‑first input
+- 🏔️ **Terrain Plugin** — DEM‑based 3D terrain with configurable exaggeration
+- 🌄 **Imagery Plugin** — Satellite imagery toggle (Esri World Imagery)
+- 🎛️ **Controls Plugin** — MapLibre official UI controls (zoom, navigation, globe, geolocation, fullscreen, scale)
 
 ### Planned / Primary Feature Plugin
 - 🚨 **Alerts Dashboard Plugin** *(core future focus)*
@@ -281,36 +277,77 @@ src/
 │   ├── mapManager.js
 │   └── stateManager.js
 ├── config/
-│   ├── defaults.js
-│   ├── tiles.js
-│   └── landmarks.js
+│   └── defaults.js
+│   └── tiles.js
 ├── plugins/
-│   ├── features/               # terrain, camera, imagery, alerts
-│   ├── ui/                     # panels, sheets, dashboards
-│   ├── interactions/           # keyboard, mouse, touch
-│   └── utils/                  # svg, helpers
+│   └── features/               # terrain, imagery, controls, alerts (future)
 └── style.css
 ```
 
-📖 **Canonical architecture:**  
-`OPENLIBRE_MASTERMAP_GOSPEL_FULL.md`
+📖 **Plugin Development:**  
+See `PLUGIN_ARCHITECTURE.md` for standard lifecycle and extension patterns.
 
 ---
 
-## 🖥️ UI Modes
+## 🗺️ MapLibre API Paradigm
 
-### Headless
-- Map only
-- Pan / zoom
-- Basemap selector
+> **Rule: Use MapLibre's official API first. Only build custom code when the API doesn't provide it.**
 
-### Full UI
-- Controls panel
-- Info panels
-- Alerts dashboard
-- Animated icons
+MASTERMAP uses **only** the official MapLibre GL JS API. No custom interaction handlers, no reinvented wheels.
 
-Switchable at runtime.
+### Built-in Handlers (Automatic)
+
+These work out-of-the-box with zero configuration:
+
+| Handler | Trigger | Function |
+|---------|---------|----------|
+| **BoxZoomHandler** | Shift + drag | Draw box, zoom to bounds |
+| **DragPanHandler** | Click + drag | Pan the map |
+| **DragRotateHandler** | Right-click + drag | Rotate 3D view |
+| **ScrollZoomHandler** | Mouse wheel | Zoom in/out |
+| **DoubleClickZoomHandler** | Double-click | Zoom in one level |
+| **KeyboardHandler** | Arrow keys, +/-, etc | Navigation shortcuts |
+| **TwoFingersTouchZoomHandler** | Pinch (mobile) | Touch zoom |
+| **TwoFingersTouchRotateHandler** | 2-finger rotate (mobile) | Touch rotate |
+
+### Official Controls (Added via Plugin)
+
+Location: `src/plugins/features/controls.js`
+
+| Control | Function | Position |
+|---------|----------|----------|
+| **NavigationControl** | Zoom buttons + compass | top-left |
+| **GlobeControl** | Toggle globe ↔ mercator | top-right |
+| **GeolocateControl** | Show user location | top-right |
+| **FullscreenControl** | Fullscreen toggle | top-right |
+| **ScaleControl** | Distance scale bar | bottom-right |
+| **AttributionControl** | Map credits | bottom-right |
+| **LogoControl** | MapLibre logo | bottom-left |
+
+### Documentation
+
+- **Full API Reference:** https://maplibre.org/maplibre-gl-js/docs/API/
+- **Handler Classes:** BoxZoomHandler, DragPanHandler, DragRotateHandler, etc.
+- **Control Classes:** NavigationControl, GeolocateControl, FullscreenControl, etc.
+
+### Adding New Map Features
+
+**Before writing custom code**, check the MapLibre API docs:
+- Need custom tooltips? Check `Popup` class
+- Need drawing tools? Use data sources + layers (MapLibre styling)
+- Need real-time updates? Use `setData()` on GeoJSON sources
+- Need custom styling? Use MapLibre layer paint/layout properties
+
+**If MapLibre provides it, use it.** Only build custom code in plugins when extending beyond the official API.
+
+---
+
+## 🖥️ Current State
+
+- **Map**: Australia terrain in globe projection with satellite imagery
+- **Controls**: MapLibre official controls (navigation, projection toggle, geolocation, fullscreen, scale)
+- **Interactions**: All MapLibre built-in handlers enabled (Shift+drag zoom, drag pan, rotate, scroll zoom, keyboard nav, touch gestures)
+- **Data**: Ready for alerts plugin integration with Neon + Redis
 
 ---
 

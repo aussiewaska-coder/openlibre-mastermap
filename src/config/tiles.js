@@ -56,7 +56,7 @@ export function createMapStyle() {
       {
         id: 'background',
         type: 'background',
-        paint: { 'background-color': '#e0e5ff' }
+        paint: { 'background-color': '#87ceeb' }
       },
       {
         id: 'osm-basemap',

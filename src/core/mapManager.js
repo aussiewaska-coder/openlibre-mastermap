@@ -4,8 +4,7 @@
 
 import maplibregl from 'maplibre-gl'
 import { createMapStyle } from '../config/tiles.js'
-import { getRandomLandmark } from '../config/landmarks.js'
-import { MAP_CONFIG } from '../config/defaults.js'
+import { MAP_CONFIG, AUSTRALIA_VIEW } from '../config/defaults.js'
 
 class MapManager {
   constructor() {
@@ -13,25 +12,47 @@ class MapManager {
   }
 
   /**
-   * Initialize the map with a random Australian landmark
+   * Initialize the map with top-down Australia view in globe projection
+   *
+   * MapLibre Handlers Enabled (built-in, automatic):
+   * - BoxZoomHandler: Shift + drag to draw selection box and zoom to bounds
+   * - DragPanHandler: Click + drag to pan the map (dragPan: true)
+   * - DragRotateHandler: Right-click + drag to rotate the map (dragRotate: true)
+   * - ScrollZoomHandler: Mouse wheel to zoom
+   * - DoubleClickZoomHandler: Double-click to zoom in
+   * - KeyboardHandler: Arrow keys to pan, +/- to zoom
+   * - TwoFingersTouchZoomHandler: Pinch to zoom (mobile)
+   * - TwoFingersTouchRotateHandler: Two-finger rotate (mobile)
+   *
+   * MapLibre Controls Added (via controls plugin):
+   * - NavigationControl: Zoom buttons + compass
+   * - AustraliaControl: Return to home view
+   * - GlobeControl: Toggle between globe and mercator projections
+   * - GeolocateControl: Show user's location
+   * - FullscreenControl: Fullscreen toggle
+   * - ScaleControl: Distance scale bar
+   * - AttributionControl: Map attribution (automatic)
+   * - LogoControl: MapLibre logo (automatic)
+   *
+   * No custom interaction handlers - using official MapLibre API only.
    */
   initialize(containerId = 'map') {
-    const landmark = getRandomLandmark()
-
     this.map = new maplibregl.Map({
       container: containerId,
       style: createMapStyle(),
-      center: [landmark.lng, landmark.lat],
-      zoom: landmark.zoom,
-      pitch: MAP_CONFIG.initialPitch,
-      bearing: MAP_CONFIG.initialBearing,
+      center: AUSTRALIA_VIEW.center,
+      zoom: AUSTRALIA_VIEW.zoom,
+      pitch: AUSTRALIA_VIEW.pitch,
+      bearing: AUSTRALIA_VIEW.bearing,
       maxPitch: MAP_CONFIG.maxPitch,
       attributionControl: true,
       dragPan: true,
       dragRotate: true
     })
 
-    console.log(`✓ Map initialized at ${landmark.name}`)
+    // Globe projection is set in main.js after all plugins initialize
+
+    console.log(`✓ Map initialized`)
     return this.map
   }
 
@@ -190,6 +211,8 @@ class MapManager {
       this.map.dragRotate.disable()
     }
   }
+
+
 
   /**
    * Cleanup

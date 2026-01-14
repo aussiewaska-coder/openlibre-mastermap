@@ -6,24 +6,9 @@
 class StateManager {
   constructor() {
     this.state = {
-      tilesLoaded: false,
-      is3DMode: false,
-      isOrbiting: false,
-      orbitBearing: 0,
-      orbitIntervalId: null,
-      
-      isFlying: false,
-      flightTransitioning: false,
-      flightBearing: 0,
-      flightAnimationId: null,
-      
-      fadeTriggered: false,
-      
       satelliteEnabled: true,
       hillshadeVisible: true,
-      terrainExaggeration: 1.0,
-      
-      landmarkMarkers: []
+      terrainExaggeration: 1.0
     }
     
     this.listeners = new Map()
@@ -93,20 +78,9 @@ class StateManager {
    */
   reset() {
     this.state = {
-      tilesLoaded: false,
-      is3DMode: false,
-      isOrbiting: false,
-      orbitBearing: 0,
-      orbitIntervalId: null,
-      isFlying: false,
-      flightTransitioning: false,
-      flightBearing: 0,
-      flightAnimationId: null,
-      fadeTriggered: false,
       satelliteEnabled: true,
       hillshadeVisible: true,
-      terrainExaggeration: 1.0,
-      landmarkMarkers: []
+      terrainExaggeration: 1.0
     }
   }
 
@@ -114,22 +88,6 @@ class StateManager {
    * Cleanup resources
    */
   cleanup() {
-    // Clear intervals/animations
-    if (this.state.orbitIntervalId) {
-      clearInterval(this.state.orbitIntervalId)
-      this.state.orbitIntervalId = null
-    }
-    if (this.state.flightAnimationId) {
-      cancelAnimationFrame(this.state.flightAnimationId)
-      this.state.flightAnimationId = null
-    }
-
-    // Remove markers
-    for (const marker of this.state.landmarkMarkers) {
-      marker.remove()
-    }
-    this.state.landmarkMarkers = []
-
     // Clear listeners
     this.listeners.clear()
   }
