@@ -48,44 +48,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Validate request body
     const body = BodySchema.parse(req.body)
 
-    // Build OpenWebNinja URL
-    const endpoint = process.env.OPENWEBNINJA_WAZE_ENDPOINT || '/waze'
-    const url = new URL(endpoint, Env.OPENWEBNINJA_BASE_URL)
-
     // Convert bbox (w,s,e,n) to bottom_left (lat,lon) and top_right (lat,lon)
     // bbox: w=west(min lon), s=south(min lat), e=east(max lon), n=north(max lat)
     const bottomLeft = `${body.bbox.s},${body.bbox.w}`
     const topRight = `${body.bbox.n},${body.bbox.e}`
 
-    url.searchParams.set('bottom_left', bottomLeft)
-    url.searchParams.set('top_right', topRight)
-
-    if (body.filters?.maxAgeMinutes) {
-      url.searchParams.set('max_age_min', String(body.filters.maxAgeMinutes))
-    }
-    if (body.filters?.minConfidence != null) {
-      url.searchParams.set('min_conf', String(body.filters.minConfidence))
-    }
-    if (body.filters?.types?.length) {
-      url.searchParams.set('types', body.filters.types.join(','))
-    }
-    if (body.filters?.includeJams === false) {
-      url.searchParams.set('include_jams', '0')
-    }
-
-    // Call OpenWebNinja Waze API with X-API-Key header
-    const requestUrl = url.toString()
-    const requestHeaders = { 'X-API-Key': Env.OPENWEBNINJA_API_KEY }
+    // Build URL using /waze/alerts-and-jams endpoint (same as working project)
+    const targetUrl = `https://api.openwebninja.com/waze/alerts-and-jams?bottom_left=${bottomLeft}&top_right=${topRight}`
 
     console.log('DEBUG: OpenWebNinja request', {
-      url: requestUrl,
+      url: targetUrl,
       keyLength: Env.OPENWEBNINJA_API_KEY.length,
-      headers: requestHeaders,
     })
 
-    const owResp = await fetch(requestUrl, {
-      headers: requestHeaders,
-      cache: 'no-store',
+    const owResp = await fetch(targetUrl, {
+      headers: {
+        'x-api-key': Env.OPENWEBNINJA_API_KEY,
+      },
     })
 
     if (!owResp.ok) {
