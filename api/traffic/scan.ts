@@ -49,13 +49,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const body = BodySchema.parse(req.body)
 
     // Build OpenWebNinja URL
-    const endpoint = process.env.OPENWEBNINJA_WAZE_ENDPOINT || '/api/waze/alerts'
+    const endpoint = process.env.OPENWEBNINJA_WAZE_ENDPOINT || '/waze'
     const url = new URL(endpoint, Env.OPENWEBNINJA_BASE_URL)
 
-    url.searchParams.set('w', String(body.bbox.w))
-    url.searchParams.set('s', String(body.bbox.s))
-    url.searchParams.set('e', String(body.bbox.e))
-    url.searchParams.set('n', String(body.bbox.n))
+    // Convert bbox (w,s,e,n) to bottom_left (lat,lon) and top_right (lat,lon)
+    // bbox: w=west(min lon), s=south(min lat), e=east(max lon), n=north(max lat)
+    const bottomLeft = `${body.bbox.s},${body.bbox.w}`
+    const topRight = `${body.bbox.n},${body.bbox.e}`
+
+    url.searchParams.set('bottom_left', bottomLeft)
+    url.searchParams.set('top_right', topRight)
 
     if (body.filters?.maxAgeMinutes) {
       url.searchParams.set('max_age_min', String(body.filters.maxAgeMinutes))
@@ -70,9 +73,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       url.searchParams.set('include_jams', '0')
     }
 
-    // Call OpenWebNinja Waze API
+    // Call OpenWebNinja Waze API with X-API-Key header
     const owResp = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${Env.OPENWEBNINJA_API_KEY}` },
+      headers: { 'x-api-key': Env.OPENWEBNINJA_API_KEY },
       cache: 'no-store',
     })
 
