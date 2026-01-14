@@ -75,7 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Call OpenWebNinja Waze API with X-API-Key header
     const requestUrl = url.toString()
-    const requestHeaders = { 'x-api-key': Env.OPENWEBNINJA_API_KEY }
+    const requestHeaders = { 'X-API-Key': Env.OPENWEBNINJA_API_KEY }
 
     console.log('DEBUG: OpenWebNinja request', {
       url: requestUrl,
