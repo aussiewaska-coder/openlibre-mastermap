@@ -72,6 +72,63 @@ export default {
   },
 
   /**
+   * Orbit camera around a center point at a fixed radius
+   * Camera moves in circular path while maintaining distance and looking at center
+   * @param {number} durationMs - Total animation duration in milliseconds
+   * @param {number} degreesPerSecond - Rotation speed (degrees per second)
+   * @param {object} centerPoint - LngLat object of orbit center
+   * @param {number} radiusDegrees - Orbital radius in degrees
+   * @param {number} pitch - Camera pitch angle (0-85, default: 60)
+   */
+  orbitWithRadius(durationMs = 60000, degreesPerSecond = 6, centerPoint, radiusDegrees, pitch = 60) {
+    if (this.animationState.isAnimating) {
+      console.warn('Animation already in progress')
+      return
+    }
+
+    const map = mapManager.getMap()
+    const startTime = Date.now()
+    const startBearing = map.getBearing()
+
+    this.animationState.isAnimating = true
+    this.animationState.currentAnimation = 'orbit-radius'
+
+    const animate = (timestamp) => {
+      const elapsed = Date.now() - startTime
+
+      if (elapsed >= durationMs) {
+        this.animationState.isAnimating = false
+        this.animationState.currentAnimation = null
+        this.animationState.animationId = null
+        console.log('✓ Orbital animation complete')
+        return
+      }
+
+      // Calculate current bearing angle around center
+      const secondsElapsed = elapsed / 1000
+      const currentBearing = (startBearing + (secondsElapsed * degreesPerSecond)) % 360
+
+      // Calculate camera position at this bearing and radius
+      const bearingRad = (currentBearing * Math.PI) / 180
+      const cameraLng = centerPoint.lng + radiusDegrees * Math.sin(bearingRad)
+      const cameraLat = centerPoint.lat + radiusDegrees * Math.cos(bearingRad)
+
+      // Move camera to new position, pointing toward center
+      map.jumpTo({
+        center: { lng: cameraLng, lat: cameraLat },
+        bearing: (currentBearing + 180) % 360, // Always face center
+        pitch: pitch,
+        zoom: map.getZoom() // Maintain current zoom
+      })
+
+      this.animationState.animationId = requestAnimationFrame(animate)
+    }
+
+    this.animationState.animationId = requestAnimationFrame(animate)
+    console.log(`✓ Orbital animation started: ${degreesPerSecond}°/sec at radius ${radiusDegrees.toFixed(3)}° around [${centerPoint.lng.toFixed(2)}, ${centerPoint.lat.toFixed(2)}]`)
+  },
+
+  /**
    * Smooth camera flyover - zoom in, pan, and return to original position
    * @param {number} targetZoom - Zoom level to fly to
    * @param {number} targetPitch - Pitch angle (0-85)
