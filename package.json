@@ -7,8 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "serve": "node server.js"
+    "preview": "vite preview"
   },
   "keywords": [
     "maplibre",
@@ -24,7 +23,6 @@
     "vite": "^5.0.0"
   },
   "dependencies": {
-    "express": "^4.18.0",
     "maplibre-gl": "^5.0.0"
   }
 }

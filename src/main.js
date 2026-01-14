@@ -10,6 +10,9 @@ import imageryFeature from './plugins/features/imagery.js'
 import controlsPlugin from './plugins/features/controls.js'
 import animationsPlugin from './plugins/features/animations.js'
 import animationsPanelUI from './plugins/ui/animations-panel.js'
+import trafficPlugin from './plugins/features/traffic.js'
+import trafficPanelUI from './plugins/ui/traffic-panel.js'
+import './plugins/ui/traffic-panel.css'
 
 /**
  * Initialize the application
@@ -38,7 +41,16 @@ async function initialize() {
     // 6. Initialize animations UI panel
     animationsPanelUI.initialize()
 
-    // 7. Setup box zoom → orbit feature
+    // 7. Initialize Traffic Intel plugin
+    trafficPlugin.initialize()
+
+    // 8. Initialize Traffic Intel UI panel
+    trafficPanelUI.initialize()
+
+    // 9. Expose traffic plugin globally for map interactions
+    window.trafficPlugin = trafficPlugin
+
+    // 10. Setup box zoom → orbit feature
     // When user completes a box zoom selection (Shift+drag), automatically start
     // an orbit animation around the center of the zoomed area
     const map = mapManager.getMap()
@@ -112,12 +124,12 @@ async function initialize() {
       console.log('🎯 Box zoom cancelled')
     })
 
-    // 8. Set globe projection after all plugins initialized
+    // 11. Set globe projection after all plugins initialized
     // CRITICAL: Must use object format {type: 'globe'}, not string 'globe'
     map.setProjection({type: 'globe'})
     console.log('✓ Globe projection enabled on startup')
 
-    // 9. Start subtle continuous horizontal pan animation immediately
+    // 12. Start subtle continuous horizontal pan animation immediately
     // Camera pans horizontally across the globe (longitude changes)
     // The animation runs for 2 hours (7200000ms) providing continuous panning
     animationsPlugin.orbitCenter(
@@ -126,7 +138,7 @@ async function initialize() {
     )
     console.log('✓ Globe horizontal pan animation started - smooth panning across Australia')
 
-    // 10. Stop animation on any user interaction
+    // 13. Stop animation on any user interaction
     // Listen for all types of user input and stop the animation
     const stopAnimationOnInteraction = () => {
       if (animationsPlugin.isAnimating()) {
@@ -164,6 +176,8 @@ function cleanup() {
   terrainFeature.cleanup()
   animationsPlugin.cleanup()
   animationsPanelUI.cleanup()
+  trafficPlugin.cleanup()
+  trafficPanelUI.cleanup()
   mapManager.destroy()
 }
 
