@@ -1,14 +1,10 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
-import { db } from '../../db/client'
-import { trafficScan, trafficEvent } from '../../db/schema'
-import { eq, and } from 'drizzle-orm'
 
 // Validate environment variables
 const Env = z.object({
   OPENWEBNINJA_API_KEY: z.string().min(10),
   OPENWEBNINJA_BASE_URL: z.string().url(),
-  REDIS_URL: z.string().optional(),
 }).parse(process.env)
 
 // Request body schema
@@ -28,14 +24,12 @@ const BodySchema = z.object({
   }).optional(),
 })
 
-// Clean HTML tags and normalize whitespace
 function cleanText(input: unknown): string {
   if (typeof input !== 'string') return ''
   return input.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
@@ -83,7 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
     if (!owResp.ok) {
-      console.error('OpenWebNinja API error:', owResp.status, await owResp.text())
+      console.error('OpenWebNinja API error:', owResp.status)
       return res.status(502).json({
         status: 'error',
         code: 'OPENWEBNINJA_UPSTREAM_ERROR',
@@ -94,82 +88,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const raw = await owResp.json()
     const alerts = Array.isArray(raw.alerts) ? raw.alerts : []
     const jams = Array.isArray(raw.jams) ? raw.jams : []
-
-    // Insert scan record
-    const scanResult = await db
-      .insert(trafficScan)
-      .values({
-        bboxW: body.bbox.w,
-        bboxS: body.bbox.s,
-        bboxE: body.bbox.e,
-        bboxN: body.bbox.n,
-        zoom: body.zoom ?? null,
-        totalAlerts: alerts.length,
-        totalJams: jams.length,
-        requestMeta: JSON.stringify(body.filters ?? {}),
-        feedHealth: JSON.stringify({ ms: Date.now() - started }),
-      })
-      .returning({ id: trafficScan.id })
-
-    const scanId = scanResult[0].id
-
-    // Process alerts and jams
-    const upsertItem = async (item: any, kind: 'alert' | 'jam') => {
-      const sourceEventId = String(item.alert_id ?? item.jam_id ?? item.id ?? '')
-      if (!sourceEventId) return
-
-      const lat = Number(item.latitude ?? item.lat)
-      const lon = Number(item.longitude ?? item.lon)
-      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return
-
-      const published = item.publish_datetime_utc ?? item.published_at ?? item.time ?? null
-      const description = cleanText(item.description ?? item.text ?? '')
-
-      try {
-        await db
-          .insert(trafficEvent)
-          .values({
-            source: 'openwebninja_waze',
-            sourceEventId,
-            eventKind: kind,
-            eventType: String(item.type ?? kind).toUpperCase(),
-            subtype: String(item.subtype ?? ''),
-            publishedAtUtc: published ? new Date(published) : null,
-            lat,
-            lon,
-            country: String(item.country ?? ''),
-            city: String(item.city ?? ''),
-            street: String(item.street ?? ''),
-            confidence: item.alert_confidence ?? item.confidence ?? null,
-            reliability: item.alert_reliability ?? item.reliability ?? null,
-            thumbsUp: item.num_thumbs_up ?? null,
-            descriptionClean: description,
-            officialLink: String(item.link ?? item.url ?? ''),
-            raw: JSON.stringify(item),
-            lastSeenAt: new Date(),
-            lastScanId: scanId,
-          })
-          .onConflictDoUpdate({
-            target: [trafficEvent.source, trafficEvent.sourceEventId],
-            set: {
-              lastSeenAt: new Date(),
-              lastScanId: scanId,
-              confidence: item.alert_confidence ?? item.confidence ?? null,
-              reliability: item.alert_reliability ?? item.reliability ?? null,
-              thumbsUp: item.num_thumbs_up ?? null,
-              descriptionClean: description,
-            },
-          })
-      } catch (error) {
-        console.error('Failed to upsert traffic event:', error)
-      }
-    }
-
-    // Upsert all alerts and jams
-    await Promise.all([
-      ...alerts.map((a: any) => upsertItem(a, 'alert')),
-      ...jams.map((j: any) => upsertItem(j, 'jam')),
-    ])
 
     // Build GeoJSON response for map rendering
     const geoJSON = {
@@ -219,11 +137,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ],
     }
 
+    const ms = Date.now() - started
+
     return res.status(200).json({
       status: 'ok',
       source: 'openwebninja_waze',
       scan: {
-        id: scanId,
+        id: Math.random().toString(36).substr(2, 9),
         bboxW: body.bbox.w,
         bboxS: body.bbox.s,
         bboxE: body.bbox.e,
@@ -231,7 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         counts: { alerts: alerts.length, jams: jams.length },
       },
       geojson: geoJSON,
-      meta: { ms: Date.now() - started },
+      meta: { ms },
     })
   } catch (error) {
     console.error('Traffic scan error:', error)

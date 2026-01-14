@@ -24,8 +24,6 @@
   },
   "dependencies": {
     "maplibre-gl": "^5.0.0",
-    "zod": "^3.22.0",
-    "drizzle-orm": "^0.29.0",
-    "postgres": "^3.4.0"
+    "zod": "^3.22.0"
   }
 }
