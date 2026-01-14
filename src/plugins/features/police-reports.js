@@ -70,26 +70,23 @@ export default {
       data: { type: 'FeatureCollection', features: [] },
     })
 
-    // Add symbol layer for police reports (using subtype-based icons)
+    // Add symbol layer for police reports (emoji rendered as text, not icons)
     map.addLayer({
       id: POLICE_LAYER_ID,
       type: 'symbol',
       source: POLICE_SOURCE_ID,
       layout: {
-        'icon-image': ['coalesce', ['get', 'icon'], '📍'],
-        'icon-size': 1.5,
-        'icon-allow-overlap': true,
-        'text-field': ['get', 'description'],
-        'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
-        'text-size': 11,
-        'text-offset': [0, 1.5],
-        'text-anchor': 'top',
+        // Emoji rendered as large text symbols (MapLibre renders emoji text natively)
+        'text-field': ['get', 'icon'],
+        'text-font': ['Arial Unicode MS Regular'],
+        'text-size': 24,
+        'text-allow-overlap': true,
+        'text-ignore-placement': false,
       },
       paint: {
-        'text-color': '#000',
+        'text-opacity': ['case', ['boolean', ['feature-state', 'selected'], false], 1, 0.7],
         'text-halo-color': '#fff',
         'text-halo-width': 1,
-        'text-opacity': ['case', ['boolean', ['feature-state', 'selected'], false], 1, 0.6],
       },
     })
 

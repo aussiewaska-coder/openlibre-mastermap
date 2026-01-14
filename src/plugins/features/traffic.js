@@ -1,5 +1,6 @@
 import mapManager from '../../core/mapManager.js'
 import stateManager from '../../core/stateManager.js'
+import { orbitAroundPoint, addInterruptListeners } from '../../core/orbitAnimation.js'
 
 /**
  * Traffic Intel Plugin
@@ -23,6 +24,9 @@ const TRAFFIC_ICONS = {
 }
 
 export default {
+  currentOrbit: null,
+  cleanupInterrupts: null,
+
   initialize() {
     const map = mapManager.getMap()
 
@@ -72,27 +76,23 @@ export default {
       },
     })
 
-    // Unclustered points layer
+    // Unclustered points layer - emoji rendered as text symbols
     map.addLayer({
       id: TRAFFIC_UNCLUSTERED_LAYER_ID,
       type: 'symbol',
       source: TRAFFIC_CLUSTER_SOURCE_ID,
       filter: ['!', ['has', 'point_count']],
       layout: {
-        'icon-image': ['coalesce', ['get', 'icon'], '📍'],
-        'icon-size': 1.5,
-        'icon-allow-overlap': true,
-        'text-field': ['get', 'description'],
-        'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
-        'text-size': 12,
-        'text-offset': [0, 1.5],
-        'text-anchor': 'top',
+        'text-field': ['get', 'icon'],
+        'text-font': ['Arial Unicode MS Regular'],
+        'text-size': 22,
+        'text-allow-overlap': true,
+        'text-ignore-placement': false,
       },
       paint: {
-        'text-color': '#000',
+        'text-opacity': ['case', ['boolean', ['feature-state', 'selected'], false], 1, 0.8],
         'text-halo-color': '#fff',
         'text-halo-width': 1,
-        'text-opacity': ['case', ['boolean', ['feature-state', 'selected'], false], 1, 0.7],
       },
     })
 
@@ -184,13 +184,12 @@ export default {
   animateToTrafficItem(coords, props) {
     const map = mapManager.getMap()
 
-    // Get animations plugin if available
-    const animationsPlugin = window.animationsPlugin
-    if (!animationsPlugin) return
-
-    // Cancel any running animations
-    if (animationsPlugin.isAnimating && animationsPlugin.isAnimating()) {
-      animationsPlugin.stop && animationsPlugin.stop()
+    // Stop any existing orbit
+    if (this.currentOrbit && this.currentOrbit.isRunning()) {
+      this.currentOrbit.stop()
+    }
+    if (this.cleanupInterrupts) {
+      this.cleanupInterrupts()
     }
 
     // Calculate flight duration based on distance
@@ -202,30 +201,29 @@ export default {
 
     // Approach pitch and bearing
     const approachPitch = 55
-    const currentBearing = map.getBearing()
-    const targetBearing = props.bearing ?? currentBearing
 
     // Fly to the target
     map.flyTo({
       center: coords,
       zoom: Math.max(15, map.getZoom()),
       pitch: approachPitch,
-      bearing: targetBearing,
       duration: durationMs,
     })
 
-    // Start orbit after approach completes
+    // Start orbit after approach completes using reusable orbit module
     setTimeout(() => {
-      if (animationsPlugin && animationsPlugin.startOrbit) {
-        const zoomLevel = map.getZoom()
-        const radiusMeters = animationsPlugin.radiusFromZoom ? animationsPlugin.radiusFromZoom(zoomLevel) : 200
+      this.currentOrbit = orbitAroundPoint({
+        center: { lng: coords[0], lat: coords[1] },
+        duration: 60000,
+        degreesPerSecond: 6,
+        pitch: approachPitch,
+        onStop: () => {
+          console.log('✓ Traffic alert orbit completed')
+        },
+      })
 
-        animationsPlugin.startOrbit({
-          target: { lng: coords[0], lat: coords[1] },
-          radiusMeters,
-          speed: 1.0,
-        })
-      }
+      // Add interrupt listeners - stops orbit on user interaction
+      this.cleanupInterrupts = addInterruptListeners(this.currentOrbit)
     }, durationMs + 100)
   },
 
@@ -312,11 +310,27 @@ export default {
       map.setFeatureState({ source: TRAFFIC_CLUSTER_SOURCE_ID, id: selectedId }, { selected: false })
     }
 
+    // Stop any running orbit
+    if (this.currentOrbit && this.currentOrbit.isRunning()) {
+      this.currentOrbit.stop()
+    }
+    if (this.cleanupInterrupts) {
+      this.cleanupInterrupts()
+    }
+
     stateManager.set('trafficSelectedId', null)
   },
 
   cleanup() {
     const map = mapManager.getMap()
+
+    // Stop any running orbit
+    if (this.currentOrbit && this.currentOrbit.isRunning()) {
+      this.currentOrbit.stop()
+    }
+    if (this.cleanupInterrupts) {
+      this.cleanupInterrupts()
+    }
 
     // Remove layers
     try {
