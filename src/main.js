@@ -53,6 +53,26 @@ async function initialize() {
     )
     console.log('✓ Globe horizontal pan animation started - smooth panning across Australia')
 
+    // 9. Stop animation on any user interaction
+    // Listen for all types of user input and stop the animation
+    const stopAnimationOnInteraction = () => {
+      if (animationsPlugin.isAnimating()) {
+        animationsPlugin.stop()
+        console.log('✓ Animation stopped by user interaction')
+        // Remove all listeners after first interaction
+        document.removeEventListener('mousedown', stopAnimationOnInteraction)
+        document.removeEventListener('touchstart', stopAnimationOnInteraction)
+        document.removeEventListener('wheel', stopAnimationOnInteraction)
+        document.removeEventListener('keydown', stopAnimationOnInteraction)
+      }
+    }
+
+    // Add listeners for all types of interaction
+    document.addEventListener('mousedown', stopAnimationOnInteraction, { once: false })
+    document.addEventListener('touchstart', stopAnimationOnInteraction, { once: false })
+    document.addEventListener('wheel', stopAnimationOnInteraction, { once: false })
+    document.addEventListener('keydown', stopAnimationOnInteraction, { once: false })
+
     // Expose animations plugin globally for console access
     window.animationsPlugin = animationsPlugin
 
