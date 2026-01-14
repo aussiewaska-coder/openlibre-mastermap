@@ -10,7 +10,6 @@ import imageryFeature from './plugins/features/imagery.js'
 import controlsPlugin from './plugins/features/controls.js'
 import animationsPlugin from './plugins/features/animations.js'
 import animationsPanelUI from './plugins/ui/animations-panel.js'
-import boxZoomPlugin from './plugins/features/box-zoom.js'
 
 /**
  * Initialize the application
@@ -33,22 +32,19 @@ async function initialize() {
     // 4. Initialize MapLibre official controls
     controlsPlugin.initialize()
 
-    // 5. Initialize custom box zoom handler
-    boxZoomPlugin.initialize()
-
-    // 6. Initialize animations plugin
+    // 5. Initialize animations plugin
     animationsPlugin.initialize()
 
-    // 7. Initialize animations UI panel
+    // 6. Initialize animations UI panel
     animationsPanelUI.initialize()
 
-    // 8. Set globe projection after all plugins initialized
+    // 7. Set globe projection after all plugins initialized
     // CRITICAL: Must use object format {type: 'globe'}, not string 'globe'
     const map = mapManager.getMap()
     map.setProjection({type: 'globe'})
     console.log('✓ Globe projection enabled on startup')
 
-    // 9. Start subtle continuous horizontal pan animation immediately
+    // 8. Start subtle continuous horizontal pan animation immediately
     // Camera pans horizontally across the globe (longitude changes)
     // The animation runs for 2 hours (7200000ms) providing continuous panning
     animationsPlugin.orbitCenter(
@@ -57,7 +53,7 @@ async function initialize() {
     )
     console.log('✓ Globe horizontal pan animation started - smooth panning across Australia')
 
-    // 10. Stop animation on any user interaction
+    // 9. Stop animation on any user interaction
     // Listen for all types of user input and stop the animation
     const stopAnimationOnInteraction = () => {
       if (animationsPlugin.isAnimating()) {
@@ -93,7 +89,6 @@ async function initialize() {
 function cleanup() {
   stateManager.cleanup()
   terrainFeature.cleanup()
-  boxZoomPlugin.cleanup()
   animationsPlugin.cleanup()
   animationsPanelUI.cleanup()
   mapManager.destroy()
