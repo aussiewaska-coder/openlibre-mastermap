@@ -54,7 +54,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const topRight = `${body.bbox.n},${body.bbox.e}`
 
     // Build URL using /waze/alerts-and-jams endpoint with all alert types
-    const targetUrl = `https://api.openwebninja.com/waze/alerts-and-jams?bottom_left=${bottomLeft}&top_right=${topRight}&max_alerts=500&max_jams=500`
+    // Request all alert types: ACCIDENT, HAZARD, POLICE, CAMERA, JAM, ROAD_CLOSED_LANE, FREEWAY_CLOSED, MODERATE_TRAFFIC, HEAVY_TRAFFIC, LIGHT_TRAFFIC
+    const targetUrl = `https://api.openwebninja.com/waze/alerts-and-jams?bottom_left=${bottomLeft}&top_right=${topRight}&alert_types=ACCIDENT,HAZARD,POLICE,CAMERA,JAM,ROAD_CLOSED_LANE,FREEWAY_CLOSED,MODERATE_TRAFFIC,HEAVY_TRAFFIC,LIGHT_TRAFFIC&max_alerts=500&max_jams=500`
 
     console.log('DEBUG: OpenWebNinja request', {
       url: targetUrl,
