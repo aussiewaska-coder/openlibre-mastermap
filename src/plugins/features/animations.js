@@ -80,7 +80,7 @@ export default {
    * @param {number} radiusDegrees - Orbital radius in degrees
    * @param {number} pitch - Camera pitch angle (0-85, default: 60)
    */
-  orbitWithRadius(durationMs = 60000, degreesPerSecond = 6, centerPoint, radiusDegrees, pitch = 60) {
+  orbitAtBearing(durationMs = 60000, degreesPerSecond = 6, centerPoint, pitch = 60) {
     if (this.animationState.isAnimating) {
       console.warn('Animation already in progress')
       return
@@ -91,7 +91,7 @@ export default {
     const startBearing = map.getBearing()
 
     this.animationState.isAnimating = true
-    this.animationState.currentAnimation = 'orbit-radius'
+    this.animationState.currentAnimation = 'orbit-bearing'
 
     const animate = (timestamp) => {
       const elapsed = Date.now() - startTime
@@ -104,28 +104,18 @@ export default {
         return
       }
 
-      // Calculate current bearing angle around center
+      // Calculate new bearing around fixed center
       const secondsElapsed = elapsed / 1000
       const currentBearing = (startBearing + (secondsElapsed * degreesPerSecond)) % 360
 
-      // Calculate camera position at this bearing and radius
-      const bearingRad = (currentBearing * Math.PI) / 180
-      const cameraLng = centerPoint.lng + radiusDegrees * Math.sin(bearingRad)
-      const cameraLat = centerPoint.lat + radiusDegrees * Math.cos(bearingRad)
-
-      // Move camera to new position, pointing toward center
-      map.jumpTo({
-        center: { lng: cameraLng, lat: cameraLat },
-        bearing: (currentBearing + 180) % 360, // Always face center
-        pitch: pitch,
-        zoom: map.getZoom() // Maintain current zoom
-      })
+      // Update ONLY bearing and pitch - center and zoom STAY FIXED
+      map.rotateTo(currentBearing, { duration: 0 })
 
       this.animationState.animationId = requestAnimationFrame(animate)
     }
 
     this.animationState.animationId = requestAnimationFrame(animate)
-    console.log(`✓ Orbital animation started: ${degreesPerSecond}°/sec at radius ${radiusDegrees.toFixed(3)}° around [${centerPoint.lng.toFixed(2)}, ${centerPoint.lat.toFixed(2)}]`)
+    console.log(`✓ Orbital animation started: ${degreesPerSecond}°/sec bearing rotation around [${centerPoint.lng.toFixed(2)}, ${centerPoint.lat.toFixed(2)}]`)
   },
 
   /**

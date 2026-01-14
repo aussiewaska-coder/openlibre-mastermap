@@ -57,43 +57,31 @@ async function initialize() {
       if (boxZoomActive) {
         boxZoomActive = false
 
-        // 1. Calculate orbital radius from box bounds
+        // Get the center point of the selected box (this stays FIXED)
         const bounds = map.getBounds()
-        const center = bounds.getCenter()
-        const zoom = map.getZoom()
+        const centerPoint = bounds.getCenter()
+        const currentZoom = map.getZoom()
 
-        const ne = bounds.getNorthEast()
-        const sw = bounds.getSouthWest()
-        const widthDeg = ne.lng - sw.lng
-        const heightDeg = ne.lat - sw.lat
-        const diagonal = Math.sqrt(widthDeg * widthDeg + heightDeg * heightDeg)
-
-        // Orbital radius: 1.5x diagonal to position outside bounds
-        const orbitRadius = diagonal * 1.5
-
-        // 2. Calculate initial camera offset position
-        const initialBearing = 45 // Northeast position for nice oblique view
-        const cameraPosition = calculateOffsetPosition(center, orbitRadius, initialBearing)
-
-        // 3. Fly camera to offset position with oblique pitch
+        // Fly to oblique viewing angle
         const targetPitch = 60
+        const targetBearing = 45 // Northeast view angle
+
         map.flyTo({
-          center: cameraPosition,
-          zoom: zoom,
-          bearing: initialBearing + 180, // Point camera toward center
+          center: centerPoint,  // CENTER STAYS FIXED AT BOX CENTER
+          zoom: currentZoom,    // Keep zoom level same
+          bearing: targetBearing,
           pitch: targetPitch,
           duration: 2000
         })
 
-        console.log(`✓ Flying to orbital position: radius ${orbitRadius.toFixed(3)}° at bearing ${initialBearing}°`)
+        console.log(`✓ Flying to oblique view: bearing ${targetBearing}°, pitch ${targetPitch}°`)
 
-        // 4. Start orbital animation after flyTo completes
+        // Start orbital animation after flyTo completes
         setTimeout(() => {
-          animationsPlugin.orbitWithRadius(
+          animationsPlugin.orbitAtBearing(
             60000,        // Duration: 60 seconds
             6,            // Speed: 6 degrees/second
-            center,       // Orbit around this point
-            orbitRadius,  // Maintain this radius
+            centerPoint,  // Fixed center point
             targetPitch   // Keep this pitch angle
           )
         }, 2100) // Wait for flyTo (2000ms) + small buffer
@@ -146,23 +134,6 @@ async function initialize() {
     console.log('✓ Animations UI panel active - toggle button bottom-left')
   } catch (error) {
     console.error('Failed to initialize MASTERMAP:', error)
-  }
-}
-
-/**
- * Helper function: Calculate camera position at offset radius and bearing
- * Uses simple planar approximation (accurate for small distances)
- * @param {object} center - LngLat center point
- * @param {number} radiusDegrees - Orbital radius in degrees
- * @param {number} bearingDegrees - Bearing angle (0-360)
- * @returns {object} LngLat offset position
- */
-function calculateOffsetPosition(center, radiusDegrees, bearingDegrees) {
-  const bearingRad = (bearingDegrees * Math.PI) / 180
-
-  return {
-    lng: center.lng + radiusDegrees * Math.sin(bearingRad),
-    lat: center.lat + radiusDegrees * Math.cos(bearingRad)
   }
 }
 
