@@ -1,32 +1,9 @@
 {
-  "name": "mastermap",
-  "version": 2,
   "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
   "framework": "vite",
   "functions": {
     "api/**/*.ts": {
       "runtime": "@vercel/node@3"
-    }
-  },
-  "env": {
-    "DATABASE_URL": {
-      "description": "Neon PostgreSQL connection string"
-    },
-    "DATABASE_SSL": {
-      "description": "Enable SSL for managed Postgres (optional)"
-    },
-    "OPENWEBNINJA_API_KEY": {
-      "description": "OpenWebNinja API key for Waze access (required)"
-    },
-    "OPENWEBNINJA_BASE_URL": {
-      "description": "OpenWebNinja base URL (default: https://www.openwebninja.com)"
-    },
-    "OPENWEBNINJA_WAZE_ENDPOINT": {
-      "description": "OpenWebNinja Waze endpoint path (default: /api/waze/alerts)"
-    },
-    "REDIS_URL": {
-      "description": "Redis connection string for caching (optional)"
     }
   },
   "rewrites": [
