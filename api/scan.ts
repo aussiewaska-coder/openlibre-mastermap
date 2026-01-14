@@ -79,6 +79,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const raw = await owResp.json()
+    console.log('DEBUG: OpenWebNinja RAW response', JSON.stringify(raw).substring(0, 1000))
+    console.log('DEBUG: Response keys:', Object.keys(raw))
     console.log('DEBUG: OpenWebNinja response', { alertsCount: raw.alerts?.length, jamsCount: raw.jams?.length })
 
     const alerts = Array.isArray(raw.alerts) ? raw.alerts : []
