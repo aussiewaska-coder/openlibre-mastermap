@@ -86,30 +86,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const alerts = Array.isArray(raw.data?.alerts) ? raw.data.alerts : []
     const jams = Array.isArray(raw.data?.jams) ? raw.data.jams : []
 
+    // Icon config by type
+    const ICONS: any = {
+      ACCIDENT: '🚗',
+      HAZARD: '⚠️',
+      POLICE: '🚔',
+      CAMERA: '📸',
+      JAM: '🚦',
+      CLOSURE: '🚫',
+      ROAD_CLOSED_LANE: '🚫',
+      FREEWAY_CLOSED: '🚫',
+      MODERATE_TRAFFIC: '🚦',
+      HEAVY_TRAFFIC: '🚦',
+      LIGHT_TRAFFIC: '🚦',
+    }
+
     // Build GeoJSON response for map rendering
     const geoJSON = {
       type: 'FeatureCollection',
       features: [
-        ...alerts.map((a: any) => ({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [Number(a.longitude ?? a.lon), Number(a.latitude ?? a.lat)],
-          },
-          properties: {
-            id: a.alert_id ?? a.id,
-            type: String(a.type ?? 'alert').toUpperCase(),
-            subtype: a.subtype ?? '',
-            confidence: a.alert_confidence ?? a.confidence ?? 0,
-            reliability: a.alert_reliability ?? a.reliability ?? 0,
-            street: a.street ?? '',
-            city: a.city ?? '',
-            publishedAt: a.publish_datetime_utc ?? a.published_at ?? a.time,
-            description: cleanText(a.description ?? a.text ?? ''),
-            link: a.link ?? a.url ?? '',
-            kind: 'alert',
-          },
-        })),
+        ...alerts.map((a: any) => {
+          const type = String(a.type ?? 'alert').toUpperCase()
+          return {
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [Number(a.longitude ?? a.lon), Number(a.latitude ?? a.lat)],
+            },
+            properties: {
+              id: a.alert_id ?? a.id,
+              type: type,
+              subtype: a.subtype ?? '',
+              icon: ICONS[type] ?? '📍',
+              confidence: a.alert_confidence ?? a.confidence ?? 0,
+              reliability: a.alert_reliability ?? a.reliability ?? 0,
+              street: a.street ?? '',
+              city: a.city ?? '',
+              publishedAt: a.publish_datetime_utc ?? a.published_at ?? a.time,
+              description: cleanText(a.description ?? a.text ?? ''),
+              link: a.link ?? a.url ?? '',
+              kind: 'alert',
+            },
+          }
+        }),
         ...jams.map((j: any) => ({
           type: 'Feature',
           geometry: {
@@ -120,6 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             id: j.jam_id ?? j.id,
             type: 'JAM',
             subtype: j.subtype ?? 'traffic',
+            icon: '🚦',
             confidence: j.confidence ?? 0,
             reliability: j.reliability ?? 0,
             street: j.street ?? '',

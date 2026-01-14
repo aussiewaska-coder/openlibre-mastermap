@@ -91,29 +91,63 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('DEBUG: Police reports result', { rowCount: rows.length })
 
+    // Icon config by subtype/type
+    const ICONS: any = {
+      POLICE_WITH_MOBILE_CAMERA: '📷',
+      POLICE_HIDING: '🕵️',
+      POLICE_VISIBLE: '🚔',
+      POLICE_ROADBLOCK: '🚧',
+      POLICE: '🚔',
+      ACCIDENT_MAJOR: '💥',
+      ACCIDENT_MINOR: '🚗',
+      ACCIDENT: '🚗',
+      HAZARD_ON_ROAD_POT_HOLE: '🕳️',
+      HAZARD_ON_ROAD_CONSTRUCTION: '🏗️',
+      HAZARD_ON_ROAD_OBJECT: '⚠️',
+      HAZARD_ON_ROAD_LANE_CLOSED: '🚫',
+      HAZARD_ON_SHOULDER_CAR_STOPPED: '🚗',
+      HAZARD_WEATHER_FLOOD: '🌊',
+      HAZARD_WEATHER_FOG: '🌫️',
+      HAZARD_WEATHER: '⛈️',
+      HAZARD_ON_ROAD: '⚠️',
+      HAZARD_ON_SHOULDER: '⚠️',
+      HAZARD: '⚠️',
+      JAM_STAND_STILL_TRAFFIC: '🚦',
+      JAM_HEAVY_TRAFFIC: '🚦',
+      JAM: '🚦',
+      ROAD_CLOSED_EVENT: '🚫',
+      ROAD_CLOSED: '🚫',
+      CAMERA_SPEED: '📸',
+      CAMERA: '📸',
+    }
+
     // Build GeoJSON response for map rendering
     const geoJSON = {
       type: 'FeatureCollection' as const,
-      features: rows.map((row: any) => ({
-        type: 'Feature' as const,
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [Number(row.longitude), Number(row.latitude)],
-        },
-        properties: {
-          alert_id: row.alert_id,
-          type: row.type || 'ALERT',
-          subtype: row.subtype || '',
-          confidence: 0, // Not available in police_reports table
-          reliability: row.alert_reliability || 0,
-          street: row.street || '',
-          city: row.city || '',
-          publishedAt: row.publish_datetime_utc || row.created_at,
-          description: `${row.type}${row.subtype ? ` - ${row.subtype}` : ''}`,
-          link: '',
-          kind: 'police-report',
-        },
-      })),
+      features: rows.map((row: any) => {
+        const subtype = row.subtype || row.type
+        return {
+          type: 'Feature' as const,
+          geometry: {
+            type: 'Point' as const,
+            coordinates: [Number(row.longitude), Number(row.latitude)],
+          },
+          properties: {
+            alert_id: row.alert_id,
+            type: row.type || 'ALERT',
+            subtype: row.subtype || '',
+            icon: ICONS[subtype] ?? ICONS[row.type] ?? '📍',
+            confidence: 0, // Not available in police_reports table
+            reliability: row.alert_reliability || 0,
+            street: row.street || '',
+            city: row.city || '',
+            publishedAt: row.publish_datetime_utc || row.created_at,
+            description: `${row.type}${row.subtype ? ` - ${row.subtype}` : ''}`,
+            link: '',
+            kind: 'police-report',
+          },
+        }
+      }),
     }
 
     const ms = Date.now() - started
