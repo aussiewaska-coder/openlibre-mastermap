@@ -367,58 +367,92 @@ export default {
     const contentEl = document.getElementById('detail-content')
 
     const icon = this.getSubtypeEmoji(properties.subtype || properties.type)
-    const ageText = properties.publishedAt ? this.getTimeAgo(new Date(properties.publishedAt)) : 'Unknown'
+    const publishDate = properties.publishedAt ? new Date(properties.publishedAt) : new Date()
+    const formattedDate = this.formatPublishDate(publishDate)
+    const timeAgo = this.getTimeAgo(publishDate)
 
     contentEl.innerHTML = `
       <div class="detail-header">
         <span class="detail-icon">${icon}</span>
-        <h2 class="detail-type">${properties.type}</h2>
+        <div class="detail-header-text">
+          <p class="detail-report-id">Report ID: ${properties.alert_id || 'N/A'}</p>
+          <h2 class="detail-type">${properties.type}</h2>
+        </div>
       </div>
 
       ${
         properties.subtype
           ? `
       <div class="detail-section">
-        <h3 class="detail-section-title\">Subtype</h3>
-        <p class="detail-subtype\">${properties.subtype}</p>
+        <h3 class="detail-section-title">Category</h3>
+        <p class="detail-subtype">${properties.subtype}</p>
       </div>
       `
           : ''
       }
 
       <div class="detail-section">
-        <h3 class="detail-section-title\">Location</h3>
-        <p class="detail-street\">${properties.street || 'Unknown'}</p>
-        <p class="detail-city\">${properties.city || ''}</p>
+        <h3 class="detail-section-title">Location</h3>
+        ${properties.street ? `<p class="detail-street">${properties.street}</p>` : ''}
+        ${properties.city ? `<p class="detail-city">${properties.city}</p>` : ''}
+        ${!properties.street && !properties.city ? '<p class="detail-address">Unknown location</p>' : ''}
       </div>
 
       <div class="detail-section">
-        <h3 class="detail-section-title\">Details</h3>
+        <h3 class="detail-section-title">Details</h3>
         <div class="detail-grid">
           <div class="detail-item">
-            <span class="detail-item-label\">Reported:</span>
-            <span class="detail-item-value\">${ageText}</span>
+            <span class="detail-item-label">Report ID:</span>
+            <span class="detail-item-value">${properties.alert_id || 'N/A'}</span>
           </div>
-          ${
-            properties.reliability
-              ? `<div class="detail-item">
-            <span class="detail-item-label\">Reliability:</span>
-            <span class="detail-item-value\">${properties.reliability}%</span>
-          </div>`
-              : ''
-          }
+          <div class="detail-item">
+            <span class="detail-item-label">Reliability:</span>
+            <span class="detail-item-value">${properties.reliability || 'N/A'}%</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-item-label">Reported:</span>
+            <span class="detail-item-value">${timeAgo}</span>
+          </div>
         </div>
       </div>
 
       <div class="detail-section">
-        <h3 class="detail-section-title\">Source</h3>
-        <p class="detail-source\">Local Police Reports Database</p>
+        <h3 class="detail-section-title">Timestamp</h3>
+        <p class="detail-timestamp-formatted">${formattedDate}</p>
+        <p class="detail-timestamp-utc">${publishDate.toISOString()}</p>
+      </div>
+
+      <div class="detail-section">
+        <h3 class="detail-section-title">Source</h3>
+        <p class="detail-source">Local Police Reports Database</p>
       </div>
     `
 
     // Hide results, show detail
     document.getElementById('police-results').style.display = 'none'
     detailEl.style.display = 'block'
+  },
+
+  formatPublishDate(date) {
+    const options = {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZone: 'UTC',
+    }
+    const formatted = date.toLocaleString('en-AU', options)
+    // Convert "02" to "2nd", "03" to "3rd", etc.
+    return formatted.replace(/\b(\d{1,2})\b/, (match) => {
+      const num = parseInt(match)
+      if (num === 1 || num === 21 || num === 31) return num + 'st'
+      if (num === 2 || num === 22) return num + 'nd'
+      if (num === 3 || num === 23) return num + 'rd'
+      return num + 'th'
+    })
   },
 
   showResultsList() {
