@@ -12,7 +12,15 @@ import animationsPlugin from './plugins/features/animations.js'
 import animationsPanelUI from './plugins/ui/animations-panel.js'
 import trafficPlugin from './plugins/features/traffic.js'
 import trafficPanelUI from './plugins/ui/traffic-panel.js'
+import policePlugin from './plugins/features/police-reports.js'
+import policePanelUI from './plugins/ui/police-panel.js'
 import './plugins/ui/traffic-panel.css'
+import './plugins/ui/police-panel.css'
+import { orbitAroundPoint, addInterruptListeners } from './core/orbitAnimation.js'
+
+// Module-level state for box zoom orbit (accessible in cleanup)
+let currentBoxOrbit = null
+let cleanupBoxInterrupts = null
 
 /**
  * Initialize the application
@@ -50,15 +58,31 @@ async function initialize() {
     // 9. Expose traffic plugin globally for map interactions
     window.trafficPlugin = trafficPlugin
 
-    // 10. Setup box zoom → orbit feature
+    // 10. Initialize Police Reports plugin
+    policePlugin.initialize()
+
+    // 11. Initialize Police Reports UI panel
+    policePanelUI.initialize()
+
+    // 12. Expose police plugin globally for map interactions
+    window.policePlugin = policePlugin
+
+    // 13. Setup box zoom → orbit feature
     // When user completes a box zoom selection (Shift+drag), automatically start
-    // an orbit animation around the center of the zoomed area
+    // an orbit animation around the center of the zoomed area using reusable orbit module
     const map = mapManager.getMap()
     let boxZoomActive = false
 
     map.on('boxzoomstart', () => {
       boxZoomActive = true
-      // Stop any existing animations
+      // Stop any existing orbit
+      if (currentBoxOrbit && currentBoxOrbit.isRunning()) {
+        currentBoxOrbit.stop()
+      }
+      if (cleanupBoxInterrupts) {
+        cleanupBoxInterrupts()
+      }
+      // Also stop animations plugin orbits
       if (animationsPlugin.isAnimating()) {
         animationsPlugin.stop()
       }
@@ -91,30 +115,20 @@ async function initialize() {
 
         console.log(`✓ Flying to adaptive pitch, center locked`)
 
-        // Start orbital animation after flyTo completes
+        // Start orbital animation after flyTo completes using reusable orbit module
         setTimeout(() => {
-          animationsPlugin.orbitAtBearing(
-            60000,        // Duration: 60 seconds
-            6,            // Speed: 6 degrees/second
-            centerPoint,  // Fixed center point
-            targetPitch   // Keep this pitch angle
-          )
+          currentBoxOrbit = orbitAroundPoint({
+            center: centerPoint,
+            duration: 60000,
+            degreesPerSecond: 6,
+            pitch: targetPitch,
+            onStop: () => {
+              console.log('✓ Box zoom orbit completed')
+            },
+          })
 
-          // Add listeners to stop orbit on user interaction
-          const stopOrbitOnInteraction = () => {
-            if (animationsPlugin.isAnimating()) {
-              animationsPlugin.stop()
-              console.log('✓ Orbit stopped by user interaction')
-              document.removeEventListener('mousedown', stopOrbitOnInteraction)
-              document.removeEventListener('touchstart', stopOrbitOnInteraction)
-              document.removeEventListener('wheel', stopOrbitOnInteraction)
-              document.removeEventListener('keydown', stopOrbitOnInteraction)
-            }
-          }
-          document.addEventListener('mousedown', stopOrbitOnInteraction)
-          document.addEventListener('touchstart', stopOrbitOnInteraction)
-          document.addEventListener('wheel', stopOrbitOnInteraction)
-          document.addEventListener('keydown', stopOrbitOnInteraction)
+          // Add interrupt listeners - stops orbit on user interaction
+          cleanupBoxInterrupts = addInterruptListeners(currentBoxOrbit)
         }, 2100) // Wait for flyTo (2000ms) + small buffer
       }
     })
@@ -124,12 +138,12 @@ async function initialize() {
       console.log('🎯 Box zoom cancelled')
     })
 
-    // 11. Set globe projection after all plugins initialized
+    // 14. Set globe projection after all plugins initialized
     // CRITICAL: Must use object format {type: 'globe'}, not string 'globe'
     map.setProjection({type: 'globe'})
     console.log('✓ Globe projection enabled on startup')
 
-    // 12. Start subtle continuous horizontal pan animation immediately
+    // 15. Start subtle continuous horizontal pan animation immediately
     // Camera pans horizontally across the globe (longitude changes)
     // The animation runs for 2 hours (7200000ms) providing continuous panning
     animationsPlugin.orbitCenter(
@@ -138,7 +152,7 @@ async function initialize() {
     )
     console.log('✓ Globe horizontal pan animation started - smooth panning across Australia')
 
-    // 13. Stop animation on any user interaction
+    // 16. Stop animation on any user interaction
     // Listen for all types of user input and stop the animation
     const stopAnimationOnInteraction = () => {
       if (animationsPlugin.isAnimating()) {
@@ -158,11 +172,12 @@ async function initialize() {
     document.addEventListener('wheel', stopAnimationOnInteraction, { once: false })
     document.addEventListener('keydown', stopAnimationOnInteraction, { once: false })
 
-    // Expose animations plugin globally for console access
+    // 17. Expose animations plugin globally for console access
     window.animationsPlugin = animationsPlugin
 
     console.log('✓ MASTERMAP initialized successfully')
-    console.log('✓ Animations UI panel active - toggle button bottom-left')
+    console.log('✓ Traffic Intel & Police Reports plugins loaded')
+    console.log('✓ Reusable orbit animation module active - used by box zoom, traffic alerts, & police reports')
   } catch (error) {
     console.error('Failed to initialize MASTERMAP:', error)
   }
@@ -178,6 +193,14 @@ function cleanup() {
   animationsPanelUI.cleanup()
   trafficPlugin.cleanup()
   trafficPanelUI.cleanup()
+  policePlugin.cleanup()
+  policePanelUI.cleanup()
+  if (currentBoxOrbit && currentBoxOrbit.isRunning()) {
+    currentBoxOrbit.stop()
+  }
+  if (cleanupBoxInterrupts) {
+    cleanupBoxInterrupts()
+  }
   mapManager.destroy()
 }
 
