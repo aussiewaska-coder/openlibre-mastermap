@@ -15,13 +15,13 @@ const BodySchema = z.object({
     e: z.number(),
     n: z.number(),
   }),
-  zoom: z.number().optional(),
+  zoom: z.number().optional().nullable(),
   filters: z.object({
-    types: z.array(z.string()).optional(),
-    maxAgeMinutes: z.number().optional(),
-    minConfidence: z.number().optional(),
-    includeJams: z.boolean().optional(),
-  }).optional(),
+    types: z.array(z.string()).optional().nullable(),
+    maxAgeMinutes: z.number().optional().nullable(),
+    minConfidence: z.number().optional().nullable(),
+    includeJams: z.boolean().optional().nullable(),
+  }).optional().nullable(),
 })
 
 function cleanText(input: unknown): string {
