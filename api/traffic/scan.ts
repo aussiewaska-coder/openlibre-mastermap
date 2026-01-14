@@ -7,7 +7,7 @@ const Env = z.object({
   OPENWEBNINJA_BASE_URL: z.string().url(),
 }).parse(process.env)
 
-// Request body schema
+// Request body schema with bbox coordinates
 const BodySchema = z.object({
   bbox: z.object({
     w: z.number(),
