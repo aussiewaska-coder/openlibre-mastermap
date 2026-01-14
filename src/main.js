@@ -84,6 +84,22 @@ async function initialize() {
             centerPoint,  // Fixed center point
             targetPitch   // Keep this pitch angle
           )
+
+          // Add listeners to stop orbit on user interaction
+          const stopOrbitOnInteraction = () => {
+            if (animationsPlugin.isAnimating()) {
+              animationsPlugin.stop()
+              console.log('✓ Orbit stopped by user interaction')
+              document.removeEventListener('mousedown', stopOrbitOnInteraction)
+              document.removeEventListener('touchstart', stopOrbitOnInteraction)
+              document.removeEventListener('wheel', stopOrbitOnInteraction)
+              document.removeEventListener('keydown', stopOrbitOnInteraction)
+            }
+          }
+          document.addEventListener('mousedown', stopOrbitOnInteraction)
+          document.addEventListener('touchstart', stopOrbitOnInteraction)
+          document.addEventListener('wheel', stopOrbitOnInteraction)
+          document.addEventListener('keydown', stopOrbitOnInteraction)
         }, 2100) // Wait for flyTo (2000ms) + small buffer
       }
     })
