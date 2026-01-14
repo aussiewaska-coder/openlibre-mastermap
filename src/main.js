@@ -38,13 +38,47 @@ async function initialize() {
     // 6. Initialize animations UI panel
     animationsPanelUI.initialize()
 
-    // 7. Set globe projection after all plugins initialized
-    // CRITICAL: Must use object format {type: 'globe'}, not string 'globe'
+    // 7. Setup box zoom → orbit feature
+    // When user completes a box zoom selection (Shift+drag), automatically start
+    // an orbit animation around the center of the zoomed area
     const map = mapManager.getMap()
+    let boxZoomActive = false
+
+    map.on('boxzoomstart', () => {
+      boxZoomActive = true
+      // Stop any existing animations
+      if (animationsPlugin.isAnimating()) {
+        animationsPlugin.stop()
+      }
+      console.log('🎯 Box zoom started')
+    })
+
+    map.on('moveend', () => {
+      if (boxZoomActive) {
+        boxZoomActive = false
+        const center = map.getCenter()
+        const zoom = map.getZoom()
+
+        console.log(`✓ Starting orbit at [${center.lng.toFixed(2)}, ${center.lat.toFixed(2)}] zoom: ${zoom.toFixed(1)}`)
+
+        // Ultra-smooth orbit animation
+        // Duration: 60 seconds for one complete rotation cycle
+        // Bearing increment: 0.05 degrees per frame = smooth, slow rotation
+        animationsPlugin.orbitCenter(60000, 0.05)
+      }
+    })
+
+    map.on('boxzoomcancel', () => {
+      boxZoomActive = false
+      console.log('🎯 Box zoom cancelled')
+    })
+
+    // 8. Set globe projection after all plugins initialized
+    // CRITICAL: Must use object format {type: 'globe'}, not string 'globe'
     map.setProjection({type: 'globe'})
     console.log('✓ Globe projection enabled on startup')
 
-    // 8. Start subtle continuous horizontal pan animation immediately
+    // 9. Start subtle continuous horizontal pan animation immediately
     // Camera pans horizontally across the globe (longitude changes)
     // The animation runs for 2 hours (7200000ms) providing continuous panning
     animationsPlugin.orbitCenter(
@@ -53,7 +87,7 @@ async function initialize() {
     )
     console.log('✓ Globe horizontal pan animation started - smooth panning across Australia')
 
-    // 9. Stop animation on any user interaction
+    // 10. Stop animation on any user interaction
     // Listen for all types of user input and stop the animation
     const stopAnimationOnInteraction = () => {
       if (animationsPlugin.isAnimating()) {
