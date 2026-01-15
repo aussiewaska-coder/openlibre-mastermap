@@ -40,6 +40,7 @@ export default {
       cluster: true,
       clusterMaxZoom: 13,
       clusterRadius: 40,
+      generateId: true,
     })
 
     // Cluster circles layer
@@ -112,18 +113,59 @@ export default {
   setupInteractions() {
     const map = mapManager.getMap()
 
-    // Click on clustered features - zoom to level 14 (just above clusterMaxZoom 13)
+    // Click on clustered features - zoom to fit ALL markers in viewport
     map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
       if (!e.features || e.features.length === 0) return
       
-      const coords = e.features[0].geometry.coordinates
+      const feature = e.features[0]
+      const clusterId = feature.properties.cluster_id
+      const clusterCoords = feature.geometry.coordinates
       
-      console.log('CLUSTER CLICKED - ZOOMING TO 14')
+      console.log('CLUSTER CLICKED:', clusterId)
       
-      map.easeTo({
-        center: coords,
-        zoom: 14,
-        duration: 600
+      const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
+      
+      // Get ALL points in this cluster
+      source.getClusterLeaves(clusterId, 1000, 0, (err, leaves) => {
+        if (err) {
+          console.error('ERROR getting cluster leaves:', err)
+          map.easeTo({ center: clusterCoords, zoom: 14, duration: 600 })
+          return
+        }
+        
+        if (!leaves || leaves.length === 0) {
+          console.warn('No leaves in cluster')
+          map.easeTo({ center: clusterCoords, zoom: 14, duration: 600 })
+          return
+        }
+        
+        console.log(`✓ Found ${leaves.length} markers in cluster`)
+        
+        // Calculate bounding box of ALL markers
+        let minLng = Infinity, maxLng = -Infinity
+        let minLat = Infinity, maxLat = -Infinity
+        
+        leaves.forEach(leaf => {
+          const [lng, lat] = leaf.geometry.coordinates
+          minLng = Math.min(minLng, lng)
+          maxLng = Math.max(maxLng, lng)
+          minLat = Math.min(minLat, lat)
+          maxLat = Math.max(maxLat, lat)
+        })
+        
+        console.log(`✓ Bounds: [${minLng}, ${minLat}] to [${maxLng}, ${maxLat}]`)
+        
+        // Zoom to fit ALL markers in viewport with padding
+        map.fitBounds(
+          [[minLng, minLat], [maxLng, maxLat]],
+          { 
+            padding: 80,
+            duration: 600,
+            maxZoom: 17
+          }
+        )
+        
+        console.log('✓ ZOOMED TO FIT ALL MARKERS')
       })
     })
 
