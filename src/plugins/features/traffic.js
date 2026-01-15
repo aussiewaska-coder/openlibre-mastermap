@@ -40,7 +40,6 @@ export default {
       cluster: true,
       clusterMaxZoom: 13,
       clusterRadius: 40,
-      generateId: true,
     })
 
     // Cluster circles layer
@@ -113,59 +112,32 @@ export default {
   setupInteractions() {
     const map = mapManager.getMap()
 
-    // Click on clustered features - zoom to fit ALL markers in viewport
+    // Click on clustered features - zoom based on cluster size
     map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
       if (!e.features || e.features.length === 0) return
       
       const feature = e.features[0]
-      const clusterId = feature.properties.cluster_id
-      const clusterCoords = feature.geometry.coordinates
+      const coords = feature.geometry.coordinates
+      const pointCount = feature.properties.point_count || 0
       
-      console.log('CLUSTER CLICKED:', clusterId)
+      // Adaptive zoom based on cluster size
+      let targetZoom
+      if (pointCount <= 5) {
+        targetZoom = 15  // Small cluster - zoom closer
+      } else if (pointCount <= 20) {
+        targetZoom = 14  // Medium cluster
+      } else if (pointCount <= 50) {
+        targetZoom = 13  // Large cluster
+      } else {
+        targetZoom = 12  // Very large cluster - stay back
+      }
       
-      const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
+      console.log(`CLUSTER: ${pointCount} points -> zoom ${targetZoom}`)
       
-      // Get ALL points in this cluster
-      source.getClusterLeaves(clusterId, 1000, 0, (err, leaves) => {
-        if (err) {
-          console.error('ERROR getting cluster leaves:', err)
-          map.easeTo({ center: clusterCoords, zoom: 14, duration: 600 })
-          return
-        }
-        
-        if (!leaves || leaves.length === 0) {
-          console.warn('No leaves in cluster')
-          map.easeTo({ center: clusterCoords, zoom: 14, duration: 600 })
-          return
-        }
-        
-        console.log(`✓ Found ${leaves.length} markers in cluster`)
-        
-        // Calculate bounding box of ALL markers
-        let minLng = Infinity, maxLng = -Infinity
-        let minLat = Infinity, maxLat = -Infinity
-        
-        leaves.forEach(leaf => {
-          const [lng, lat] = leaf.geometry.coordinates
-          minLng = Math.min(minLng, lng)
-          maxLng = Math.max(maxLng, lng)
-          minLat = Math.min(minLat, lat)
-          maxLat = Math.max(maxLat, lat)
-        })
-        
-        console.log(`✓ Bounds: [${minLng}, ${minLat}] to [${maxLng}, ${maxLat}]`)
-        
-        // Zoom to fit ALL markers in viewport with padding
-        map.fitBounds(
-          [[minLng, minLat], [maxLng, maxLat]],
-          { 
-            padding: 80,
-            duration: 600,
-            maxZoom: 17
-          }
-        )
-        
-        console.log('✓ ZOOMED TO FIT ALL MARKERS')
+      map.easeTo({
+        center: coords,
+        zoom: targetZoom,
+        duration: 600
       })
     })
 
