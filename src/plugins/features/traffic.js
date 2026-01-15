@@ -161,31 +161,37 @@ export default {
     // DISABLE MapLibre's default double-click zoom - we handle it ourselves
     map.doubleClickZoom.disable()
 
-    // SINGLE CLICK on cluster = zoom in
-    map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
+    // CLICK on cluster = zoom to show ALL markers in that cluster
+    const zoomToClusterMarkers = (e) => {
       const feature = e.features?.[0]
       if (!feature) return
 
-      const coords = feature.geometry.coordinates
-      map.flyTo({
-        center: coords,
-        zoom: map.getZoom() + 2,
-        duration: 500
-      })
-    })
+      const clusterId = feature.properties.cluster_id
+      const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
 
-    // SINGLE CLICK on cluster count text = zoom in (same behavior)
-    map.on('click', TRAFFIC_COUNT_LAYER_ID, (e) => {
-      const feature = e.features?.[0]
-      if (!feature) return
+      // Get all points in this cluster and fit bounds to show them all
+      source.getClusterLeaves(clusterId, 10000, 0, (err, leaves) => {
+        if (err || !leaves || leaves.length === 0) {
+          // Fallback: just zoom in
+          map.flyTo({ center: feature.geometry.coordinates, zoom: map.getZoom() + 3, duration: 500 })
+          return
+        }
 
-      const coords = feature.geometry.coordinates
-      map.flyTo({
-        center: coords,
-        zoom: map.getZoom() + 2,
-        duration: 500
+        // Calculate bounds for ALL markers in cluster
+        const bounds = new maplibregl.LngLatBounds()
+        leaves.forEach(leaf => bounds.extend(leaf.geometry.coordinates))
+
+        // Fit to show all markers
+        map.fitBounds(bounds, {
+          padding: { top: 50, bottom: 50, left: 400, right: 50 },
+          maxZoom: 16,
+          duration: 800
+        })
       })
-    })
+    }
+
+    map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, zoomToClusterMarkers)
+    map.on('click', TRAFFIC_COUNT_LAYER_ID, zoomToClusterMarkers)
 
     // Click on individual unclustered markers - show detail panel
     map.on('click', TRAFFIC_UNCLUSTERED_LAYER_ID, (e) => {
