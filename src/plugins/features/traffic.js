@@ -112,12 +112,14 @@ export default {
   setupInteractions() {
     const map = mapManager.getMap()
 
-    // Click on clustered features - zoom to show individual markers
+    // Click on clustered features - zoom to show individual markers  
     map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
       const features = e.features
       if (!features || features.length === 0) return
       
       const clusterId = features[0].properties.cluster_id
+      const clusterCoords = features[0].geometry.coordinates
+      
       console.log('CLUSTER CLICKED:', clusterId)
       
       const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
@@ -126,18 +128,39 @@ export default {
         return
       }
       
-      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+      // Get all points in cluster
+      source.getClusterLeaves(clusterId, 100, 0, (err, leafFeatures) => {
         if (err) {
-          console.error('getClusterExpansionZoom ERROR:', err)
+          console.error('getClusterLeaves ERROR:', err)
           return
         }
-
-        console.log('ZOOMING TO:', zoom)
         
-        map.easeTo({
-          center: features[0].geometry.coordinates,
-          zoom: zoom
+        if (!leafFeatures || leafFeatures.length === 0) {
+          console.warn('No leaves in cluster')
+          return
+        }
+        
+        console.log(`Cluster has ${leafFeatures.length} points`)
+        
+        // Calculate bounds
+        let minLng = Infinity, maxLng = -Infinity
+        let minLat = Infinity, maxLat = -Infinity
+        
+        leafFeatures.forEach(f => {
+          const [lng, lat] = f.geometry.coordinates
+          minLng = Math.min(minLng, lng)
+          maxLng = Math.max(maxLng, lng)
+          minLat = Math.min(minLat, lat)
+          maxLat = Math.max(maxLat, lat)
         })
+        
+        // Fit bounds with padding
+        map.fitBounds(
+          [[minLng, minLat], [maxLng, maxLat]],
+          { padding: 80, duration: 600, maxZoom: 17 }
+        )
+        
+        console.log('ZOOMED TO BOUNDS')
       })
     })
 
