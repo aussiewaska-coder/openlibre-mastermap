@@ -203,6 +203,28 @@ export default {
       }
     })
 
+    // Click on individual unclustered markers - show detail panel
+    map.on('click', TRAFFIC_UNCLUSTERED_LAYER_ID, (e) => {
+      if (!e.features || e.features.length === 0) return
+
+      const feature = e.features[0]
+      const featureId = feature.id
+
+      // Set feature state for visual feedback
+      map.setFeatureState({ source: TRAFFIC_CLUSTER_SOURCE_ID, id: featureId }, { selected: true })
+
+      // Update global state
+      stateManager.set('trafficSelectedId', featureId)
+
+      // Dispatch event for UI panel to show detail view
+      const event = new CustomEvent('trafficItemSelected', {
+        detail: { feature, properties: feature.properties, coordinates: feature.geometry.coordinates }
+      })
+      document.dispatchEvent(event)
+
+      console.log(`✓ Selected traffic alert: ${feature.properties.id}`)
+    })
+
     // Change cursor on hover
     map.on('mouseenter', TRAFFIC_UNCLUSTERED_LAYER_ID, () => {
       map.getCanvas().style.cursor = 'pointer'
