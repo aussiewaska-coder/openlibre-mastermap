@@ -77,29 +77,46 @@ export default {
   setupClusterClick() {
     const map = mapManager.getMap()
 
-    // Inspect cluster on click - zoom to expansion zoom
-    map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, function (e) {
-      var features = map.queryRenderedFeatures(e.point, {
-        layers: [TRAFFIC_CLUSTERS_LAYER_ID]
-      })
-      var clusterId = features[0].properties.cluster_id
-      map.getSource(TRAFFIC_CLUSTER_SOURCE_ID).getClusterExpansionZoom(
-        clusterId,
-        function (err, zoom) {
-          if (err) return
-          map.easeTo({
-            center: features[0].geometry.coordinates,
-            zoom: zoom
-          })
-        }
-      )
-    })
+    const handleClusterClick = (e) => {
+      const feature = e.features && e.features[0]
+      if (!feature) return
 
-    map.on('mouseenter', TRAFFIC_CLUSTERS_LAYER_ID, function () {
-      map.getCanvas().style.cursor = 'pointer'
-    })
-    map.on('mouseleave', TRAFFIC_CLUSTERS_LAYER_ID, function () {
-      map.getCanvas().style.cursor = ''
+      const clusterId = feature.properties.cluster_id
+      const coords = feature.geometry.coordinates
+      const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
+
+      if (!source || typeof source.getClusterExpansionZoom !== 'function') {
+        map.easeTo({ center: coords, zoom: map.getZoom() + 1.5 })
+        return
+      }
+
+      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+        if (err || typeof zoom !== 'number') {
+          console.warn('Cluster expansion failed; applying fallback zoom', err)
+          map.easeTo({ center: coords, zoom: map.getZoom() + 1.5 })
+          return
+        }
+
+        map.easeTo({
+          center: coords,
+          zoom
+        })
+      })
+    }
+
+    // Click handlers for both cluster bubble and count label layers
+    map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, handleClusterClick)
+    map.on('click', TRAFFIC_COUNT_LAYER_ID, handleClusterClick)
+
+    // Pointer cursor on both layers
+    const pointerLayers = [TRAFFIC_CLUSTERS_LAYER_ID, TRAFFIC_COUNT_LAYER_ID]
+    pointerLayers.forEach((layerId) => {
+      map.on('mouseenter', layerId, function () {
+        map.getCanvas().style.cursor = 'pointer'
+      })
+      map.on('mouseleave', layerId, function () {
+        map.getCanvas().style.cursor = ''
+      })
     })
   },
 
