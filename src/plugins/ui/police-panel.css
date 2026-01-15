@@ -51,10 +51,12 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  pointer-events: none;  /* Don't block map clicks when closed */
 }
 
 .police-panel.open {
   transform: translateY(0);
+  pointer-events: auto;  /* Capture events when open */
 }
 
 .police-panel-content {

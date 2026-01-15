@@ -16,10 +16,12 @@
   flex-direction: column;
   transition: transform 0.3s ease;
   overflow: hidden;
+  pointer-events: auto;  /* Capture events when open (default) */
 }
 
 .dashboard-sidebar:not(.open) {
   transform: translateX(-360px);
+  pointer-events: none;  /* Don't block map clicks when closed */
 }
 
 /* Header */

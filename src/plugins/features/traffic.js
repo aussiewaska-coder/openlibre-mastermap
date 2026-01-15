@@ -158,18 +158,47 @@ export default {
   setupInteractions() {
     const map = mapManager.getMap()
 
-    // Double-click on cluster - zoom to show ALL markers in cluster
-    map.on('dblclick', TRAFFIC_CLUSTERS_LAYER_ID, async (e) => {
-      e.preventDefault()  // Prevent default double-click zoom
+    // DEBUG: Log ALL clicks on map to see what's being hit
+    map.on('click', (e) => {
+      const features = map.queryRenderedFeatures(e.point)
+      console.log('%c[DEBUG] MAP CLICK', 'color: blue; font-weight: bold', {
+        point: e.point,
+        lngLat: e.lngLat,
+        featuresHit: features.length,
+        layers: features.map(f => f.layer.id),
+        featureTypes: features.map(f => f.layer.type)
+      })
+      if (features.length === 0) {
+        console.log('%c[DEBUG] NO FEATURES HIT - check if markers exist at this location', 'color: red')
+      }
+    })
 
-      if (!e.features || e.features.length === 0) return
+    // Also log double-clicks
+    map.on('dblclick', (e) => {
+      const features = map.queryRenderedFeatures(e.point)
+      console.log('%c[DEBUG] MAP DBLCLICK', 'color: green; font-weight: bold', {
+        point: e.point,
+        featuresHit: features.length,
+        layers: features.map(f => f.layer.id)
+      })
+    })
+
+    // Handle dblclick on BOTH cluster layers (circle AND count text)
+    const handleClusterDblClick = async (e) => {
+      console.log('%c[DEBUG] CLUSTER DBLCLICK HANDLER FIRED', 'color: purple; font-weight: bold')
+      e.preventDefault()
+
+      if (!e.features || e.features.length === 0) {
+        console.log('%c[DEBUG] No features in event', 'color: red')
+        return
+      }
 
       const feature = e.features[0]
       const clusterId = feature.properties.cluster_id
       const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
+      console.log('%c[DEBUG] Cluster ID:', 'color: purple', clusterId)
 
       try {
-        // Get ALL points in this cluster (use large limit)
         const clusterLeaves = await new Promise((resolve, reject) => {
           source.getClusterLeaves(clusterId, 10000, 0, (err, features) => {
             if (err) reject(err)
@@ -177,33 +206,31 @@ export default {
           })
         })
 
+        console.log('%c[DEBUG] Cluster leaves:', 'color: purple', clusterLeaves.length)
+
         if (clusterLeaves.length === 0) return
 
-        // Calculate bounds encompassing all cluster markers
         const bounds = new maplibregl.LngLatBounds()
         clusterLeaves.forEach(leaf => {
           bounds.extend(leaf.geometry.coordinates)
         })
 
-        // Fit map to show ALL markers with UI padding
         map.fitBounds(bounds, {
-          padding: {
-            top: 100,      // Top controls
-            bottom: 250,   // Bottom sheet panel
-            left: 60,      // Left margin
-            right: 60      // Right margin
-          },
+          padding: { top: 100, bottom: 250, left: 60, right: 60 },
           maxZoom: 15,
           duration: 600,
           linear: true
         })
 
-        console.log(`Cluster expanded: ${clusterLeaves.length} markers`)
-
+        console.log('%c[DEBUG] fitBounds called successfully', 'color: green')
       } catch (err) {
-        console.error('Failed to expand cluster:', err)
+        console.error('[DEBUG] Cluster expand failed:', err)
       }
-    })
+    }
+
+    // Register on BOTH cluster layers
+    map.on('dblclick', TRAFFIC_CLUSTERS_LAYER_ID, handleClusterDblClick)
+    map.on('dblclick', TRAFFIC_COUNT_LAYER_ID, handleClusterDblClick)
 
     // Click on individual unclustered markers - show detail panel
     map.on('click', TRAFFIC_UNCLUSTERED_LAYER_ID, (e) => {
