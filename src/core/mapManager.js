@@ -46,9 +46,13 @@ class MapManager {
       bearing: AUSTRALIA_VIEW.bearing,
       maxPitch: MAP_CONFIG.maxPitch,
       attributionControl: true,
-      dragPan: true,
-      dragRotate: true,
-      doubleClickZoom: false // disable default dblclick zoom so layer clicks (clusters) win
+      interactive: false, // disable all user interactions
+      dragPan: false,
+      dragRotate: false,
+      scrollZoom: false,
+      boxZoom: false,
+      keyboard: false,
+      doubleClickZoom: false
     })
 
     // Expose map for debugging

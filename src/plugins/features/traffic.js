@@ -1,5 +1,4 @@
 import mapManager from '../../core/mapManager.js'
-import stateManager from '../../core/stateManager.js'
 
 /**
  * Traffic Intel Plugin
@@ -70,112 +69,7 @@ export default {
       }
     })
 
-    this.setupClusterClick()
-    this.setupDebugClickLog()
     console.log('✓ Traffic plugin initialized')
-  },
-
-  setupClusterClick() {
-    const map = mapManager.getMap()
-
-    const handleClusterClick = (e) => {
-      if (e && typeof e.preventDefault === 'function') {
-        e.preventDefault()
-      }
-      if (e && e.originalEvent && typeof e.originalEvent.stopPropagation === 'function') {
-        e.originalEvent.stopPropagation()
-      }
-
-      const feature = e.features && e.features[0]
-      if (!feature) return
-
-      const clusterId = feature.properties.cluster_id
-      const coords = feature.geometry.coordinates
-      const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
-
-      if (!source || typeof source.getClusterExpansionZoom !== 'function') {
-        map.easeTo({ center: coords, zoom: map.getZoom() + 1.5 })
-        return
-      }
-
-      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-        if (err || typeof zoom !== 'number') {
-          console.warn('Cluster expansion failed; applying fallback zoom', err)
-          map.easeTo({ center: coords, zoom: map.getZoom() + 1.5 })
-          return
-        }
-
-        map.easeTo({
-          center: coords,
-          zoom
-        })
-      })
-    }
-
-    // Click handlers for both cluster bubble and count label layers
-    map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, handleClusterClick)
-    map.on('click', TRAFFIC_COUNT_LAYER_ID, handleClusterClick)
-    // Double-click: prevent default zoom so the cluster expansion wins
-    map.on('dblclick', TRAFFIC_CLUSTERS_LAYER_ID, handleClusterClick)
-    map.on('dblclick', TRAFFIC_COUNT_LAYER_ID, handleClusterClick)
-
-    // Click unclustered points: zoom in slightly to show movement
-    map.on('click', TRAFFIC_UNCLUSTERED_LAYER_ID, (e) => {
-      const feature = e.features && e.features[0]
-      if (!feature) return
-      if (e && typeof e.preventDefault === 'function') e.preventDefault()
-      if (e.originalEvent && typeof e.originalEvent.stopPropagation === 'function') {
-        e.originalEvent.stopPropagation()
-      }
-      map.easeTo({ center: feature.geometry.coordinates, zoom: Math.max(map.getZoom() + 1.5, 10) })
-    })
-
-    // Global fallback: any map click will try to hit traffic layers and expand clusters or zoom to point
-    map.on('click', (e) => {
-      const hits = map.queryRenderedFeatures(e.point, {
-        layers: [TRAFFIC_CLUSTERS_LAYER_ID, TRAFFIC_COUNT_LAYER_ID, TRAFFIC_UNCLUSTERED_LAYER_ID]
-      })
-      if (!hits.length) return
-
-      const clusterFeature = hits.find((f) => !!f.properties?.cluster_id)
-      if (clusterFeature) {
-        handleClusterClick({ ...e, features: [clusterFeature] })
-        return
-      }
-
-      const pointFeature = hits.find((f) => !f.properties?.cluster_id)
-      if (pointFeature) {
-        map.easeTo({
-          center: pointFeature.geometry.coordinates,
-          zoom: Math.max(map.getZoom() + 1.5, 10)
-        })
-      }
-    })
-
-    // Pointer cursor on both layers
-    const pointerLayers = [TRAFFIC_CLUSTERS_LAYER_ID, TRAFFIC_COUNT_LAYER_ID]
-    pointerLayers.forEach((layerId) => {
-      map.on('mouseenter', layerId, function () {
-        map.getCanvas().style.cursor = 'pointer'
-      })
-      map.on('mouseleave', layerId, function () {
-        map.getCanvas().style.cursor = ''
-      })
-    })
-  },
-
-  setupDebugClickLog() {
-    const map = mapManager.getMap()
-    const layers = [TRAFFIC_CLUSTERS_LAYER_ID, TRAFFIC_COUNT_LAYER_ID, TRAFFIC_UNCLUSTERED_LAYER_ID]
-    map.on('click', (e) => {
-      const feats = map.queryRenderedFeatures(e.point, { layers })
-      console.log('Traffic click debug:', feats.map((f) => ({
-        id: f.properties?.id || f.properties?.cluster_id,
-        layer: f.layer?.id,
-        cluster: !!f.properties?.cluster_id,
-        pointCount: f.properties?.point_count
-      })))
-    })
   },
 
   updateTrafficData(geoJSON) {
@@ -188,34 +82,6 @@ export default {
     }
 
     console.log(`✓ Traffic data updated: ${geoJSON.features.length} items`)
-
-    // Autofit to data so clusters are visible
-    this.fitToData(geoJSON)
-  },
-
-  fitToData(geoJSON) {
-    const map = mapManager.getMap()
-    if (!geoJSON?.features?.length || !map?.fitBounds) return
-
-    const coords = geoJSON.features
-      .map((f) => f.geometry && f.geometry.coordinates)
-      .filter(Boolean)
-    if (!coords.length) return
-
-    const lons = coords.map((c) => c[0])
-    const lats = coords.map((c) => c[1])
-    const west = Math.min(...lons)
-    const east = Math.max(...lons)
-    const south = Math.min(...lats)
-    const north = Math.max(...lats)
-
-    map.fitBounds(
-      [
-        [west, south],
-        [east, north]
-      ],
-      { padding: 80, duration: 800 }
-    )
   },
 
   enable() {
