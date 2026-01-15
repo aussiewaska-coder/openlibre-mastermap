@@ -71,6 +71,7 @@ export default {
     })
 
     this.setupClusterClick()
+    this.setupDebugClickLog()
     console.log('✓ Traffic plugin initialized')
   },
 
@@ -127,6 +128,20 @@ export default {
       map.on('mouseleave', layerId, function () {
         map.getCanvas().style.cursor = ''
       })
+    })
+  },
+
+  setupDebugClickLog() {
+    const map = mapManager.getMap()
+    const layers = [TRAFFIC_CLUSTERS_LAYER_ID, TRAFFIC_COUNT_LAYER_ID, TRAFFIC_UNCLUSTERED_LAYER_ID]
+    map.on('click', (e) => {
+      const feats = map.queryRenderedFeatures(e.point, { layers })
+      console.log('Traffic click debug:', feats.map((f) => ({
+        id: f.properties?.id || f.properties?.cluster_id,
+        layer: f.layer?.id,
+        cluster: !!f.properties?.cluster_id,
+        pointCount: f.properties?.point_count
+      })))
     })
   },
 

@@ -51,6 +51,11 @@ class MapManager {
       doubleClickZoom: false // disable default dblclick zoom so layer clicks (clusters) win
     })
 
+    // Expose map for debugging
+    if (typeof window !== 'undefined') {
+      window.map = this.map
+    }
+
     // Globe projection is set in main.js after all plugins initialize
 
     console.log(`✓ Map initialized`)
