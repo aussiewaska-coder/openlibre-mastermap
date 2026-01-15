@@ -184,48 +184,52 @@ export default {
     })
 
     // Handle dblclick on BOTH cluster layers (circle AND count text)
+    let isHandlingCluster = false  // Prevent double-firing
     const handleClusterDblClick = async (e) => {
+      if (isHandlingCluster) return  // Already handling
+      isHandlingCluster = true
+
       console.log('%c[DEBUG] CLUSTER DBLCLICK HANDLER FIRED', 'color: purple; font-weight: bold')
       e.preventDefault()
 
+      // Disable default zoom
+      map.doubleClickZoom.disable()
+
       if (!e.features || e.features.length === 0) {
         console.log('%c[DEBUG] No features in event', 'color: red')
+        isHandlingCluster = false
         return
       }
 
       const feature = e.features[0]
       const clusterId = feature.properties.cluster_id
+      console.log('%c[DEBUG] Cluster ID:', 'color: purple', clusterId, 'Feature:', feature)
+
       const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
-      console.log('%c[DEBUG] Cluster ID:', 'color: purple', clusterId)
-
-      try {
-        const clusterLeaves = await new Promise((resolve, reject) => {
-          source.getClusterLeaves(clusterId, 10000, 0, (err, features) => {
-            if (err) reject(err)
-            else resolve(features)
-          })
-        })
-
-        console.log('%c[DEBUG] Cluster leaves:', 'color: purple', clusterLeaves.length)
-
-        if (clusterLeaves.length === 0) return
-
-        const bounds = new maplibregl.LngLatBounds()
-        clusterLeaves.forEach(leaf => {
-          bounds.extend(leaf.geometry.coordinates)
-        })
-
-        map.fitBounds(bounds, {
-          padding: { top: 100, bottom: 250, left: 60, right: 60 },
-          maxZoom: 15,
-          duration: 600,
-          linear: true
-        })
-
-        console.log('%c[DEBUG] fitBounds called successfully', 'color: green')
-      } catch (err) {
-        console.error('[DEBUG] Cluster expand failed:', err)
+      if (!source) {
+        console.error('[DEBUG] SOURCE NOT FOUND!')
+        isHandlingCluster = false
+        return
       }
+      console.log('%c[DEBUG] Source found:', 'color: purple', source)
+
+      // Try getClusterExpansionZoom first (simpler approach)
+      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+        if (err) {
+          console.error('[DEBUG] getClusterExpansionZoom failed:', err)
+        } else {
+          console.log('%c[DEBUG] Expansion zoom:', 'color: green', zoom)
+          const coords = feature.geometry.coordinates
+          map.easeTo({
+            center: coords,
+            zoom: Math.min(zoom, 15),
+            duration: 500
+          })
+          console.log('%c[DEBUG] easeTo called!', 'color: green')
+        }
+        isHandlingCluster = false
+        map.doubleClickZoom.enable()
+      })
     }
 
     // Register on BOTH cluster layers
