@@ -45,14 +45,7 @@ class MapManager {
       pitch: AUSTRALIA_VIEW.pitch,
       bearing: AUSTRALIA_VIEW.bearing,
       maxPitch: MAP_CONFIG.maxPitch,
-      attributionControl: true,
-      interactive: false, // disable all user interactions
-      dragPan: false,
-      dragRotate: false,
-      scrollZoom: false,
-      boxZoom: false,
-      keyboard: false,
-      doubleClickZoom: false
+      attributionControl: true
     })
 
     // Expose map for debugging
