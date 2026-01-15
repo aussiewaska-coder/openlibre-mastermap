@@ -53,7 +53,8 @@ async function initialize() {
 
     // 14. Set globe projection after all plugins initialized
     const map = mapManager.getMap()
-    map.setProjection({type: 'globe'})
+    // Use standard MapLibre projection name to avoid projection warnings
+    map.setProjection('globe')
     console.log('✓ Globe projection enabled on startup')
 
     console.log('✓ MASTERMAP initialized successfully')

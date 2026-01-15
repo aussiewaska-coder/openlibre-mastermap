@@ -9,7 +9,7 @@ import mapManager from '../../core/mapManager.js'
 
 export default {
   panelEl: null,
-  isOpen: true,
+  isOpen: false,
   activeTab: 'traffic',
   trafficData: [],
   activeFilters: {
@@ -19,6 +19,7 @@ export default {
 
   initialize() {
     this.createSidebar()
+    this.createToggleButton()
     this.attachEventListeners()
     console.log('✓ Consolidated dashboard initialized')
   },
@@ -26,7 +27,7 @@ export default {
   createSidebar() {
     const sidebar = document.createElement('div')
     sidebar.id = 'consolidated-dashboard'
-    sidebar.className = 'dashboard-sidebar open'
+    sidebar.className = 'dashboard-sidebar'
     sidebar.innerHTML = `
       <div class="dashboard-header">
         <div class="dashboard-title-section">
@@ -109,6 +110,20 @@ export default {
     this.panelEl = sidebar
   },
 
+  createToggleButton() {
+    const toggle = document.createElement('button')
+    toggle.id = 'dashboard-toggle'
+    toggle.className = 'dashboard-toggle'
+    toggle.setAttribute('aria-label', 'Open data dashboard')
+    toggle.setAttribute('aria-expanded', 'false')
+    toggle.innerHTML = `
+      <span class="dashboard-toggle-icon">📊</span>
+      <span class="dashboard-toggle-text">Data</span>
+    `
+    document.body.appendChild(toggle)
+    this.toggleButton = toggle
+  },
+
   attachEventListeners() {
     // Collapse button
     this.panelEl.querySelector('.dashboard-collapse').addEventListener('click', () => {
@@ -155,11 +170,27 @@ export default {
     document.addEventListener('trafficItemSelected', (e) => {
       this.showDetail('traffic', e.detail)
     })
+
+    // Floating toggle
+    if (this.toggleButton) {
+      this.toggleButton.addEventListener('click', () => {
+        this.toggleSidebar()
+      })
+    }
   },
 
   toggleSidebar() {
     this.isOpen = !this.isOpen
-    this.panelEl.classList.toggle('open')
+    this.panelEl.classList.toggle('open', this.isOpen)
+    if (this.toggleButton) {
+      this.toggleButton.setAttribute('aria-expanded', this.isOpen ? 'true' : 'false')
+    }
+
+    // Ensure the map resizes to avoid control overlap when the panel is opened/closed
+    try {
+      const map = mapManager.getMap()
+      if (map && map.resize) map.resize()
+    } catch (e) {}
   },
 
   switchTab(tab) {
@@ -212,14 +243,29 @@ export default {
         body: JSON.stringify({ bbox, zoom: map.getZoom() }),
       })
 
-      const data = await response.json()
+      if (!response.ok) {
+        const errText = await response.text().catch(() => '')
+        throw new Error(
+          `Scan API failed: ${response.status} ${response.statusText || ''}${
+            errText ? ` – ${errText}` : ''
+          }`
+        )
+      }
+
+      let data
+      try {
+        data = await response.json()
+      } catch (jsonErr) {
+        throw new Error('Scan API returned invalid JSON')
+      }
+
       this.trafficData = data.geojson.features || []
       await trafficPlugin.updateTrafficData(data.geojson)
       this.renderTrafficResults()
       this.updateTrafficStatus(data.geojson.features.length)
     } catch (error) {
       console.error('Traffic scan failed:', error)
-      alert('Scan failed. Please try again.')
+      alert(error.message || 'Scan failed. Please try again.')
     } finally {
       this.updateProgressUI('traffic-scan', false)
     }

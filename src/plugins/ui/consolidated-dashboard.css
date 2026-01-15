@@ -24,6 +24,55 @@
   pointer-events: none;  /* Don't block map clicks when closed */
 }
 
+/* Floating toggle button (keeps map interactive by default) */
+.dashboard-toggle {
+  position: fixed;
+  left: 16px;
+  bottom: 110px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  min-width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: #1f2937;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 550;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.dashboard-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+  background: #111827;
+}
+
+.dashboard-toggle:active {
+  transform: scale(0.98);
+}
+
+.dashboard-toggle-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.dashboard-toggle-text {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .dashboard-toggle-text {
+    display: inline;
+  }
+}
+
 /* Header */
 .dashboard-header {
   display: flex;
@@ -513,5 +562,13 @@
 
   .dashboard-sidebar:not(.open) {
     transform: translateX(-100%);
+  }
+
+  .dashboard-toggle {
+    left: 12px;
+    bottom: 16px;
+    min-width: 42px;
+    padding: 10px;
+    gap: 4px;
   }
 }
