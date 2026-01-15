@@ -11,6 +11,7 @@ import controlsPlugin from './plugins/features/controls.js'
 
 import trafficPlugin from './plugins/features/traffic.js'
 import consolidatedDashboard from './plugins/ui/consolidated-dashboard.js'
+import './plugins/ui/consolidated-dashboard.css'
 
 
 
@@ -51,12 +52,9 @@ async function initialize() {
     
 
     // 14. Set globe projection after all plugins initialized
-    // CRITICAL: Must use object format {type: 'globe'}, not string 'globe'
+    const map = mapManager.getMap()
     map.setProjection({type: 'globe'})
     console.log('✓ Globe projection enabled on startup')
-
-    // 15. Expose animations plugin globally for console access
-    window.animationsPlugin = animationsPlugin
 
     console.log('✓ MASTERMAP initialized successfully')
     console.log('✓ Traffic Intel dashboard active (left sidebar)')
