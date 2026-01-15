@@ -10,6 +10,8 @@ import imageryFeature from './plugins/features/imagery.js'
 import controlsPlugin from './plugins/features/controls.js'
 
 import trafficPlugin from './plugins/features/traffic.js'
+import trafficPanel from './plugins/ui/traffic-panel.js'
+import './plugins/ui/traffic-panel.css'
 
 
 /**
@@ -45,6 +47,9 @@ async function initialize() {
     if (trafficPlugin.loadInitialData) {
       trafficPlugin.loadInitialData()
     }
+
+    // 9. Initialize minimal traffic scan UI (bottom sheet toggle with Scan button)
+    trafficPanel.initialize()
 
     
 

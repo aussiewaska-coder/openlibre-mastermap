@@ -79,11 +79,6 @@ body {
   z-index: 11;
 }
 
-/* Disable accidental click-capture from stray overlays */
-body > *:not(#map):not(.maplibregl-control-container) {
-  pointer-events: none !important;
-}
-
 /* Globe Control styling */
 .maplibre-ctrl-icon.maplibre-ctrl-globe::before {
   content: '🌐';
