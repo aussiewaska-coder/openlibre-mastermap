@@ -139,8 +139,8 @@ export default {
 
           console.log('Zooming to level:', zoom)
           
-          // Zoom in a bit more to ensure individual markers are visible
-          const targetZoom = Math.min(zoom + 2, 18)
+          // Zoom in much more to ensure individual markers are clearly visible
+          const targetZoom = Math.min(zoom + 4, 19)
           
           map.flyTo({
             center: clickedFeature.geometry.coordinates,
