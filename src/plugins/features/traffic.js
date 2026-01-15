@@ -81,6 +81,9 @@ export default {
       if (e && typeof e.preventDefault === 'function') {
         e.preventDefault()
       }
+      if (e && e.originalEvent && typeof e.originalEvent.stopPropagation === 'function') {
+        e.originalEvent.stopPropagation()
+      }
 
       const feature = e.features && e.features[0]
       if (!feature) return

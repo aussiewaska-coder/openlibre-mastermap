@@ -47,7 +47,8 @@ class MapManager {
       maxPitch: MAP_CONFIG.maxPitch,
       attributionControl: true,
       dragPan: true,
-      dragRotate: true
+      dragRotate: true,
+      doubleClickZoom: false // disable default dblclick zoom so layer clicks (clusters) win
     })
 
     // Globe projection is set in main.js after all plugins initialize
