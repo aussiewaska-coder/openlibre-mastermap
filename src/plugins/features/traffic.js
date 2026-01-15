@@ -119,6 +119,17 @@ export default {
     map.on('dblclick', TRAFFIC_CLUSTERS_LAYER_ID, handleClusterClick)
     map.on('dblclick', TRAFFIC_COUNT_LAYER_ID, handleClusterClick)
 
+    // Click unclustered points: zoom in slightly to show movement
+    map.on('click', TRAFFIC_UNCLUSTERED_LAYER_ID, (e) => {
+      const feature = e.features && e.features[0]
+      if (!feature) return
+      if (e && typeof e.preventDefault === 'function') e.preventDefault()
+      if (e.originalEvent && typeof e.originalEvent.stopPropagation === 'function') {
+        e.originalEvent.stopPropagation()
+      }
+      map.easeTo({ center: feature.geometry.coordinates, zoom: Math.max(map.getZoom() + 1.5, 10) })
+    })
+
     // Pointer cursor on both layers
     const pointerLayers = [TRAFFIC_CLUSTERS_LAYER_ID, TRAFFIC_COUNT_LAYER_ID]
     pointerLayers.forEach((layerId) => {
@@ -203,25 +214,33 @@ export default {
     const demo = {
       type: 'FeatureCollection',
       features: [
-        {
+        // Dense cluster around Sydney to guarantee a visible cluster bubble
+        ...Array.from({ length: 12 }).map((_, i) => ({
           type: 'Feature',
-          geometry: { type: 'Point', coordinates: [151.2093, -33.8688] }, // Sydney
-          properties: { id: 'demo-1', type: 'ACCIDENT', icon: '🚗', publishedAt: new Date().toISOString() }
-        },
+          geometry: {
+            type: 'Point',
+            coordinates: [
+              151.2093 + (Math.random() - 0.5) * 0.15,
+              -33.8688 + (Math.random() - 0.5) * 0.1
+            ]
+          },
+          properties: {
+            id: `demo-syd-${i}`,
+            type: 'ACCIDENT',
+            icon: '🚗',
+            publishedAt: new Date().toISOString()
+          }
+        })),
+        // A couple of outliers
         {
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [144.9631, -37.8136] }, // Melbourne
-          properties: { id: 'demo-2', type: 'HAZARD', icon: '⚠️', publishedAt: new Date().toISOString() }
+          properties: { id: 'demo-melb', type: 'HAZARD', icon: '⚠️', publishedAt: new Date().toISOString() }
         },
         {
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [153.026, -27.4698] }, // Brisbane
-          properties: { id: 'demo-3', type: 'POLICE', icon: '🚔', publishedAt: new Date().toISOString() }
-        },
-        {
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [115.8575, -31.9505] }, // Perth
-          properties: { id: 'demo-4', type: 'JAM', icon: '🚦', publishedAt: new Date().toISOString() }
+          properties: { id: 'demo-bne', type: 'POLICE', icon: '🚔', publishedAt: new Date().toISOString() }
         }
       ]
     }
