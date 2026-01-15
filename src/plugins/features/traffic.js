@@ -78,6 +78,10 @@ export default {
     const map = mapManager.getMap()
 
     const handleClusterClick = (e) => {
+      if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault()
+      }
+
       const feature = e.features && e.features[0]
       if (!feature) return
 
@@ -107,6 +111,9 @@ export default {
     // Click handlers for both cluster bubble and count label layers
     map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, handleClusterClick)
     map.on('click', TRAFFIC_COUNT_LAYER_ID, handleClusterClick)
+    // Double-click: prevent default zoom so the cluster expansion wins
+    map.on('dblclick', TRAFFIC_CLUSTERS_LAYER_ID, handleClusterClick)
+    map.on('dblclick', TRAFFIC_COUNT_LAYER_ID, handleClusterClick)
 
     // Pointer cursor on both layers
     const pointerLayers = [TRAFFIC_CLUSTERS_LAYER_ID, TRAFFIC_COUNT_LAYER_ID]
