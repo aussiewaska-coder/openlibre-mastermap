@@ -1,6 +1,5 @@
 import mapManager from '../../core/mapManager.js'
 import stateManager from '../../core/stateManager.js'
-import { orbitAroundPoint, addInterruptListeners } from '../../core/orbitAnimation.js'
 
 /**
  * Traffic Intel Plugin
@@ -24,8 +23,6 @@ const TRAFFIC_ICONS = {
 }
 
 export default {
-  currentOrbit: null,
-  cleanupInterrupts: null,
 
   initialize() {
     const map = mapManager.getMap()
@@ -133,15 +130,6 @@ export default {
       )
     })
 
-    // Click on unclustered points - select and show detail
-    map.on('click', TRAFFIC_UNCLUSTERED_LAYER_ID, (e) => {
-      if (!e.features || e.features.length === 0) return
-      
-      const feature = e.features[0]
-      console.log('✓ Individual marker clicked:', feature.properties.id)
-      this.selectTrafficItem(feature)
-    })
-
     // Change cursor on hover
     map.on('mouseenter', TRAFFIC_UNCLUSTERED_LAYER_ID, () => {
       map.getCanvas().style.cursor = 'pointer'
@@ -156,73 +144,6 @@ export default {
     map.on('mouseleave', TRAFFIC_CLUSTERS_LAYER_ID, () => {
       map.getCanvas().style.cursor = ''
     })
-  },
-
-  selectTrafficItem(feature) {
-    const map = mapManager.getMap()
-    const coords = feature.geometry.coordinates
-    const props = feature.properties
-
-    // Update selected state
-    stateManager.set('trafficSelectedId', props.id)
-
-    // Highlight the marker
-    map.setFeatureState({ source: TRAFFIC_CLUSTER_SOURCE_ID, id: props.id }, { selected: true })
-
-    // Dispatch custom event for UI panel to listen
-    const event = new CustomEvent('trafficItemSelected', {
-      detail: { feature, coordinates: coords, properties: props },
-    })
-    document.dispatchEvent(event)
-
-    // Trigger cinematic animation if available
-    this.animateToTrafficItem(coords, props)
-  },
-
-  animateToTrafficItem(coords, props) {
-    const map = mapManager.getMap()
-
-    // Stop any existing orbit
-    if (this.currentOrbit && this.currentOrbit.isRunning()) {
-      this.currentOrbit.stop()
-    }
-    if (this.cleanupInterrupts) {
-      this.cleanupInterrupts()
-    }
-
-    // Calculate flight duration based on distance
-    const currentCenter = map.getCenter()
-    const dx = coords[0] - currentCenter.lng
-    const dy = coords[1] - currentCenter.lat
-    const distance = Math.sqrt(dx * dx + dy * dy)
-    const durationMs = Math.max(800, Math.min(1600, distance * 100))
-
-    // Approach pitch and bearing
-    const approachPitch = 55
-
-    // Fly to the target
-    map.flyTo({
-      center: coords,
-      zoom: Math.max(15, map.getZoom()),
-      pitch: approachPitch,
-      duration: durationMs,
-    })
-
-    // Start orbit after approach completes using reusable orbit module
-    setTimeout(() => {
-      this.currentOrbit = orbitAroundPoint({
-        center: { lng: coords[0], lat: coords[1] },
-        duration: 60000,
-        degreesPerSecond: 6,
-        pitch: approachPitch,
-        onStop: () => {
-          console.log('✓ Traffic alert orbit completed')
-        },
-      })
-
-      // Add interrupt listeners - stops orbit on user interaction
-      this.cleanupInterrupts = addInterruptListeners(this.currentOrbit)
-    }, durationMs + 100)
   },
 
   async updateTrafficData(geoJSON) {
@@ -308,27 +229,11 @@ export default {
       map.setFeatureState({ source: TRAFFIC_CLUSTER_SOURCE_ID, id: selectedId }, { selected: false })
     }
 
-    // Stop any running orbit
-    if (this.currentOrbit && this.currentOrbit.isRunning()) {
-      this.currentOrbit.stop()
-    }
-    if (this.cleanupInterrupts) {
-      this.cleanupInterrupts()
-    }
-
     stateManager.set('trafficSelectedId', null)
   },
 
   cleanup() {
     const map = mapManager.getMap()
-
-    // Stop any running orbit
-    if (this.currentOrbit && this.currentOrbit.isRunning()) {
-      this.currentOrbit.stop()
-    }
-    if (this.cleanupInterrupts) {
-      this.cleanupInterrupts()
-    }
 
     // Remove layers
     try {
