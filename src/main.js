@@ -9,13 +9,12 @@ import terrainFeature from './plugins/features/terrain.js'
 import imageryFeature from './plugins/features/imagery.js'
 import controlsPlugin from './plugins/features/controls.js'
 import animationsPlugin from './plugins/features/animations.js'
-import animationsPanelUI from './plugins/ui/animations-panel.js'
 import trafficPlugin from './plugins/features/traffic.js'
-import trafficPanelUI from './plugins/ui/traffic-panel.js'
 import policePlugin from './plugins/features/police-reports.js'
-import policePanelUI from './plugins/ui/police-panel.js'
-import './plugins/ui/traffic-panel.css'
-import './plugins/ui/police-panel.css'
+import consolidatedDashboard from './plugins/ui/consolidated-dashboard.js'
+import flightControlsPanel from './plugins/ui/flight-controls-panel.js'
+import './plugins/ui/consolidated-dashboard.css'
+import './plugins/ui/flight-controls-panel.css'
 import { orbitAroundPoint, addInterruptListeners } from './core/orbitAnimation.js'
 
 // Module-level state for box zoom orbit (accessible in cleanup)
@@ -46,26 +45,21 @@ async function initialize() {
     // 5. Initialize animations plugin
     animationsPlugin.initialize()
 
-    // 6. Initialize animations UI panel
-    animationsPanelUI.initialize()
-
-    // 7. Initialize Traffic Intel plugin
+    // 6. Initialize Traffic Intel plugin (map layer only, no UI)
     trafficPlugin.initialize()
 
-    // 8. Initialize Traffic Intel UI panel
-    trafficPanelUI.initialize()
-
-    // 9. Expose traffic plugin globally for map interactions
-    window.trafficPlugin = trafficPlugin
-
-    // 10. Initialize Police Reports plugin
+    // 7. Initialize Police Reports plugin (map layer only, no UI)
     policePlugin.initialize()
 
-    // 11. Initialize Police Reports UI panel
-    policePanelUI.initialize()
-
-    // 12. Expose police plugin globally for map interactions
+    // 8. Expose plugins globally for interactions
+    window.trafficPlugin = trafficPlugin
     window.policePlugin = policePlugin
+
+    // 9. Initialize consolidated dashboard (left sidebar with tabs)
+    consolidatedDashboard.initialize()
+
+    // 10. Initialize flight controls panel (left bottom panel)
+    flightControlsPanel.initialize()
 
     // 13. Setup box zoom → orbit feature
     // When user completes a box zoom selection (Shift+drag), automatically start
@@ -176,8 +170,8 @@ async function initialize() {
     window.animationsPlugin = animationsPlugin
 
     console.log('✓ MASTERMAP initialized successfully')
-    console.log('✓ Traffic Intel & Police Reports plugins loaded')
-    console.log('✓ Reusable orbit animation module active - used by box zoom, traffic alerts, & police reports')
+    console.log('✓ Consolidated left sidebar dashboard active')
+    console.log('✓ Flight controls panel ready at bottom-left')
   } catch (error) {
     console.error('Failed to initialize MASTERMAP:', error)
   }
@@ -190,11 +184,10 @@ function cleanup() {
   stateManager.cleanup()
   terrainFeature.cleanup()
   animationsPlugin.cleanup()
-  animationsPanelUI.cleanup()
   trafficPlugin.cleanup()
-  trafficPanelUI.cleanup()
   policePlugin.cleanup()
-  policePanelUI.cleanup()
+  consolidatedDashboard.cleanup()
+  flightControlsPanel.cleanup()
   if (currentBoxOrbit && currentBoxOrbit.isRunning()) {
     currentBoxOrbit.stop()
   }
