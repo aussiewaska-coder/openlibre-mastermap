@@ -33,23 +33,54 @@ export default {
       data: { type: 'FeatureCollection', features: [] },
     })
 
-    // Add clustered source
+    // Add clustered source with type aggregation
     map.addSource(TRAFFIC_CLUSTER_SOURCE_ID, {
       type: 'geojson',
       data: { type: 'FeatureCollection', features: [] },
       cluster: true,
       clusterMaxZoom: 13,
       clusterRadius: 40,
+      clusterProperties: {
+        accidentCount: ['+', ['case', ['==', ['get', 'type'], 'ACCIDENT'], 1, 0]],
+        hazardCount: ['+', ['case', ['==', ['get', 'type'], 'HAZARD'], 1, 0]],
+        policeCount: ['+', ['case', ['==', ['get', 'type'], 'POLICE'], 1, 0]],
+        closureCount: ['+', ['case', ['==', ['get', 'type'], 'CLOSURE'], 1, 0]],
+        jamCount: ['+', ['case', ['==', ['get', 'type'], 'JAM'], 1, 0]],
+      },
     })
 
-    // Cluster circles layer
+    // Cluster circles layer - color-coded by dominant type
     map.addLayer({
       id: TRAFFIC_CLUSTERS_LAYER_ID,
       type: 'circle',
       source: TRAFFIC_CLUSTER_SOURCE_ID,
       filter: ['has', 'point_count'],
       paint: {
-        'circle-color': '#ea580c',
+        'circle-color': [
+          'case',
+          // Dominant type determination: check which count is highest
+          ['all',
+            ['>=', ['get', 'accidentCount'], ['get', 'hazardCount']],
+            ['>=', ['get', 'accidentCount'], ['get', 'policeCount']],
+            ['>=', ['get', 'accidentCount'], ['get', 'closureCount']],
+            ['>=', ['get', 'accidentCount'], ['get', 'jamCount']]
+          ], '#dc2626', // Red for accident-dominant
+
+          ['all',
+            ['>=', ['get', 'hazardCount'], ['get', 'policeCount']],
+            ['>=', ['get', 'hazardCount'], ['get', 'closureCount']],
+            ['>=', ['get', 'hazardCount'], ['get', 'jamCount']]
+          ], '#f59e0b', // Yellow/orange for hazard-dominant
+
+          ['all',
+            ['>=', ['get', 'policeCount'], ['get', 'closureCount']],
+            ['>=', ['get', 'policeCount'], ['get', 'jamCount']]
+          ], '#0066cc', // Blue for police-dominant
+
+          ['>=', ['get', 'closureCount'], ['get', 'jamCount']], '#6b21a8', // Purple for closure-dominant
+
+          '#ea580c' // Default: orange for jam-dominant
+        ],
         'circle-radius': ['step', ['get', 'point_count'], 25, 100, 35, 750, 45],
         'circle-opacity': 0.85,
         'circle-stroke-width': 3,
@@ -73,6 +104,21 @@ export default {
       },
     })
 
+    // Red background circles for unclustered individual markers
+    map.addLayer({
+      id: 'traffic-unclustered-background',
+      type: 'circle',
+      source: TRAFFIC_CLUSTER_SOURCE_ID,
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-radius': 16,
+        'circle-color': '#dc2626', // Red background
+        'circle-opacity': 0.9,
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#fff',
+      },
+    })
+
     // Unclustered points layer - emoji rendered as text symbols
     map.addLayer({
       id: TRAFFIC_UNCLUSTERED_LAYER_ID,
@@ -87,10 +133,10 @@ export default {
         'text-ignore-placement': false,
       },
       paint: {
-        'text-color': '#1f2937',
+        'text-color': '#ffffff', // White emoji for contrast against red background
         'text-opacity': ['case', ['boolean', ['feature-state', 'selected'], false], 1, 0.9],
-        'text-halo-color': '#fff',
-        'text-halo-width': 2,
+        'text-halo-color': 'transparent',
+        'text-halo-width': 0,
       },
     })
 
@@ -112,33 +158,49 @@ export default {
   setupInteractions() {
     const map = mapManager.getMap()
 
-    // Click on clustered features - zoom based on cluster size
-    map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
+    // Click on clustered features - fitBounds to show ALL markers in cluster
+    map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, async (e) => {
       if (!e.features || e.features.length === 0) return
-      
+
       const feature = e.features[0]
-      const coords = feature.geometry.coordinates
-      const pointCount = feature.properties.point_count || 0
-      
-      // Adaptive zoom based on cluster size
-      let targetZoom
-      if (pointCount <= 5) {
-        targetZoom = 15  // Small cluster - zoom closer
-      } else if (pointCount <= 20) {
-        targetZoom = 14  // Medium cluster
-      } else if (pointCount <= 50) {
-        targetZoom = 13  // Large cluster
-      } else {
-        targetZoom = 12  // Very large cluster - stay back
+      const clusterId = feature.properties.cluster_id
+      const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
+
+      try {
+        // Get all points in this cluster
+        const clusterLeaves = await new Promise((resolve, reject) => {
+          source.getClusterLeaves(clusterId, 1000, 0, (err, features) => {
+            if (err) reject(err)
+            else resolve(features)
+          })
+        })
+
+        if (clusterLeaves.length === 0) return
+
+        // Calculate bounds that encompass all cluster markers
+        const bounds = new maplibregl.LngLatBounds()
+        clusterLeaves.forEach(leaf => {
+          bounds.extend(leaf.geometry.coordinates)
+        })
+
+        // Fit map to show ALL markers in cluster
+        map.fitBounds(bounds, {
+          padding: {
+            top: 80,      // Space for controls
+            bottom: 200,  // Extra space for bottom sheet UI
+            left: 40,
+            right: 40
+          },
+          maxZoom: 15,    // Don't zoom too close
+          duration: 800,  // Smooth animation
+          linear: false   // Use flyTo
+        })
+
+        console.log(`✓ Cluster expanded: ${clusterLeaves.length} markers in view`)
+
+      } catch (err) {
+        console.error('Failed to expand cluster:', err)
       }
-      
-      console.log(`CLUSTER: ${pointCount} points -> zoom ${targetZoom}`)
-      
-      map.easeTo({
-        center: coords,
-        zoom: targetZoom,
-        duration: 600
-      })
     })
 
     // Change cursor on hover
@@ -183,6 +245,7 @@ export default {
     const map = mapManager.getMap()
     map.setLayoutProperty(TRAFFIC_CLUSTERS_LAYER_ID, 'visibility', 'visible')
     map.setLayoutProperty(TRAFFIC_COUNT_LAYER_ID, 'visibility', 'visible')
+    map.setLayoutProperty('traffic-unclustered-background', 'visibility', 'visible')
     map.setLayoutProperty(TRAFFIC_UNCLUSTERED_LAYER_ID, 'visibility', 'visible')
     stateManager.set('trafficEnabled', true)
   },
@@ -191,6 +254,7 @@ export default {
     const map = mapManager.getMap()
     map.setLayoutProperty(TRAFFIC_CLUSTERS_LAYER_ID, 'visibility', 'none')
     map.setLayoutProperty(TRAFFIC_COUNT_LAYER_ID, 'visibility', 'none')
+    map.setLayoutProperty('traffic-unclustered-background', 'visibility', 'none')
     map.setLayoutProperty(TRAFFIC_UNCLUSTERED_LAYER_ID, 'visibility', 'none')
     stateManager.set('trafficEnabled', false)
   },
@@ -249,6 +313,7 @@ export default {
     // Remove layers
     try {
       map.removeLayer(TRAFFIC_UNCLUSTERED_LAYER_ID)
+      map.removeLayer('traffic-unclustered-background')
       map.removeLayer(TRAFFIC_COUNT_LAYER_ID)
       map.removeLayer(TRAFFIC_CLUSTERS_LAYER_ID)
     } catch (e) {
