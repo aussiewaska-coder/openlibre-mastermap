@@ -158,59 +158,34 @@ export default {
   setupInteractions() {
     const map = mapManager.getMap()
 
-    // DEBUG: Log ALL clicks on map to see what's being hit
-    map.on('click', (e) => {
-      const features = map.queryRenderedFeatures(e.point)
-      console.log('%c[DEBUG] MAP CLICK', 'color: blue; font-weight: bold', {
-        point: e.point,
-        lngLat: e.lngLat,
-        featuresHit: features.length,
-        layers: features.map(f => f.layer.id),
-        featureTypes: features.map(f => f.layer.type)
-      })
-      if (features.length === 0) {
-        console.log('%c[DEBUG] NO FEATURES HIT - check if markers exist at this location', 'color: red')
-      }
-    })
+    // DISABLE MapLibre's default double-click zoom - we handle it ourselves
+    map.doubleClickZoom.disable()
 
-    // Also log double-clicks
-    map.on('dblclick', (e) => {
-      const features = map.queryRenderedFeatures(e.point)
-      console.log('%c[DEBUG] MAP DBLCLICK', 'color: green; font-weight: bold', {
-        point: e.point,
-        featuresHit: features.length,
-        layers: features.map(f => f.layer.id)
-      })
-    })
-
-    // Handle dblclick on BOTH cluster layers (circle AND count text)
-    let isHandlingCluster = false
-    const handleClusterDblClick = (e) => {
-      if (isHandlingCluster) return
-      isHandlingCluster = true
-
+    // SINGLE CLICK on cluster = zoom in
+    map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
       const feature = e.features?.[0]
-      if (!feature) {
-        isHandlingCluster = false
-        return
-      }
+      if (!feature) return
 
       const coords = feature.geometry.coordinates
-      console.log('ZOOMING TO:', coords)
-
-      // Just zoom to the cluster location
       map.flyTo({
         center: coords,
         zoom: map.getZoom() + 2,
-        duration: 800
+        duration: 500
       })
+    })
 
-      setTimeout(() => { isHandlingCluster = false }, 1000)
-    }
+    // SINGLE CLICK on cluster count text = zoom in (same behavior)
+    map.on('click', TRAFFIC_COUNT_LAYER_ID, (e) => {
+      const feature = e.features?.[0]
+      if (!feature) return
 
-    // Register on BOTH cluster layers
-    map.on('dblclick', TRAFFIC_CLUSTERS_LAYER_ID, handleClusterDblClick)
-    map.on('dblclick', TRAFFIC_COUNT_LAYER_ID, handleClusterDblClick)
+      const coords = feature.geometry.coordinates
+      map.flyTo({
+        center: coords,
+        zoom: map.getZoom() + 2,
+        duration: 500
+      })
+    })
 
     // Click on individual unclustered markers - show detail panel
     map.on('click', TRAFFIC_UNCLUSTERED_LAYER_ID, (e) => {
