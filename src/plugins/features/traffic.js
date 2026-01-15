@@ -53,9 +53,9 @@ export default {
       filter: ['has', 'point_count'],
       paint: {
         'circle-color': '#ea580c',
-        'circle-radius': ['step', ['get', 'point_count'], 20, 100, 30, 750, 40],
-        'circle-opacity': 0.8,
-        'circle-stroke-width': 2,
+        'circle-radius': ['step', ['get', 'point_count'], 25, 100, 35, 750, 45],
+        'circle-opacity': 0.85,
+        'circle-stroke-width': 3,
         'circle-stroke-color': '#fff',
       },
     })
@@ -117,36 +117,48 @@ export default {
 
     // Click on clustered features - zoom to show individual markers
     map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
-      const features = map.querySourceFeatures(TRAFFIC_CLUSTER_SOURCE_ID, {
-        sourceLayer: '',
-        filter: ['has', 'point_count'],
-      })
+      if (!e.features || e.features.length === 0) return
 
-      const feature = features.find((f) => f.properties.cluster_id === e.features[0].properties.cluster_id)
+      const clickedFeature = e.features[0]
+      const clusterId = clickedFeature.properties.cluster_id
 
-      if (feature && feature.properties.cluster_id != null) {
-        const clusterId = feature.properties.cluster_id
-        // Get cluster expansion zoom to show individual markers
-        map.getSource(TRAFFIC_CLUSTER_SOURCE_ID).getClusterExpansionZoom(clusterId, (err, zoom) => {
-          if (err) return
+      if (clusterId != null) {
+        console.log('✓ Cluster clicked:', clusterId)
+        
+        const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
+        if (!source) {
+          console.error('Cluster source not found')
+          return
+        }
+
+        source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+          if (err) {
+            console.error('Cluster expansion zoom error:', err)
+            return
+          }
+
+          console.log('Zooming to level:', zoom)
+          
           // Zoom in a bit more to ensure individual markers are visible
-          const targetZoom = Math.min(zoom + 1, 18)
+          const targetZoom = Math.min(zoom + 2, 18)
+          
           map.flyTo({
-            center: feature.geometry.coordinates,
+            center: clickedFeature.geometry.coordinates,
             zoom: targetZoom,
-            duration: 600,
+            duration: 800,
             pitch: 0,
           })
         })
       }
     })
 
-    // Click on unclustered points - select and animate
+    // Click on unclustered points - select and show detail
     map.on('click', TRAFFIC_UNCLUSTERED_LAYER_ID, (e) => {
-      if (e.features.length > 0) {
-        const feature = e.features[0]
-        this.selectTrafficItem(feature)
-      }
+      if (!e.features || e.features.length === 0) return
+      
+      const feature = e.features[0]
+      console.log('✓ Individual marker clicked:', feature.properties.id)
+      this.selectTrafficItem(feature)
     })
 
     // Change cursor on hover
@@ -158,7 +170,7 @@ export default {
     })
 
     map.on('mouseenter', TRAFFIC_CLUSTERS_LAYER_ID, () => {
-      map.getCanvas().style.cursor = 'pointer'
+      map.getCanvas().style.cursor = 'zoom-in'
     })
     map.on('mouseleave', TRAFFIC_CLUSTERS_LAYER_ID, () => {
       map.getCanvas().style.cursor = ''
