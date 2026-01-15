@@ -77,71 +77,28 @@ export default {
   setupClusterClick() {
     const map = mapManager.getMap()
 
-    // Click cluster -> zoom to show all contained markers
-    map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
-      console.log('CLUSTER CLICKED')
-      const cluster = e.features[0]
-      const clusterId = cluster.properties.cluster_id
-      const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
-      console.log('Cluster ID:', clusterId)
-
-      // Get ALL leaves (individual points) in this cluster
-      source.getClusterLeaves(clusterId, Infinity, 0, (error, features) => {
-        console.log('getClusterLeaves callback fired')
-        if (error) {
-          console.error('getClusterLeaves error:', error)
-          return
-        }
-
-        if (!features || features.length === 0) {
-          console.log('No features in cluster')
-          return
-        }
-
-        console.log('Features found:', features.length)
-
-        // Build bounds containing all points
-        const coordinates = features.map(f => f.geometry.coordinates)
-        console.log('Coordinates:', coordinates)
-
-        const bounds = coordinates.reduce((bounds, coord) => {
-          return bounds.extend(coord)
-        }, new maplibregl.LngLatBounds(coordinates[0], coordinates[0]))
-
-        console.log('Bounds:', bounds)
-
-        // Zoom to fit all markers
-        map.fitBounds(bounds, {
-          padding: 100,
-          maxZoom: 15
-        })
-        console.log('fitBounds CALLED')
+    // Inspect cluster on click - zoom to expansion zoom
+    map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, function (e) {
+      var features = map.queryRenderedFeatures(e.point, {
+        layers: [TRAFFIC_CLUSTERS_LAYER_ID]
       })
+      var clusterId = features[0].properties.cluster_id
+      map.getSource(TRAFFIC_CLUSTER_SOURCE_ID).getClusterExpansionZoom(
+        clusterId,
+        function (err, zoom) {
+          if (err) return
+          map.easeTo({
+            center: features[0].geometry.coordinates,
+            zoom: zoom
+          })
+        }
+      )
     })
 
-    // Click on count label does same thing
-    map.on('click', TRAFFIC_COUNT_LAYER_ID, (e) => {
-      const cluster = e.features[0]
-      const clusterId = cluster.properties.cluster_id
-      const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
-
-      source.getClusterLeaves(clusterId, Infinity, 0, (error, features) => {
-        if (error || !features || features.length === 0) return
-
-        const coordinates = features.map(f => f.geometry.coordinates)
-        const bounds = coordinates.reduce((bounds, coord) => {
-          return bounds.extend(coord)
-        }, new maplibregl.LngLatBounds(coordinates[0], coordinates[0]))
-
-        map.fitBounds(bounds, { padding: 100, maxZoom: 15 })
-      })
-    })
-
-    // Cursor feedback
-    map.on('mouseenter', TRAFFIC_CLUSTERS_LAYER_ID, () => {
+    map.on('mouseenter', TRAFFIC_CLUSTERS_LAYER_ID, function () {
       map.getCanvas().style.cursor = 'pointer'
     })
-    map.on('mouseleave', TRAFFIC_CLUSTERS_LAYER_ID, () => {
+    map.on('mouseleave', TRAFFIC_CLUSTERS_LAYER_ID, function () {
       map.getCanvas().style.cursor = ''
     })
   },
