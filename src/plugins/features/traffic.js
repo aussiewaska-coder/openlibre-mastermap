@@ -130,6 +130,28 @@ export default {
       map.easeTo({ center: feature.geometry.coordinates, zoom: Math.max(map.getZoom() + 1.5, 10) })
     })
 
+    // Global fallback: any map click will try to hit traffic layers and expand clusters or zoom to point
+    map.on('click', (e) => {
+      const hits = map.queryRenderedFeatures(e.point, {
+        layers: [TRAFFIC_CLUSTERS_LAYER_ID, TRAFFIC_COUNT_LAYER_ID, TRAFFIC_UNCLUSTERED_LAYER_ID]
+      })
+      if (!hits.length) return
+
+      const clusterFeature = hits.find((f) => !!f.properties?.cluster_id)
+      if (clusterFeature) {
+        handleClusterClick({ ...e, features: [clusterFeature] })
+        return
+      }
+
+      const pointFeature = hits.find((f) => !f.properties?.cluster_id)
+      if (pointFeature) {
+        map.easeTo({
+          center: pointFeature.geometry.coordinates,
+          zoom: Math.max(map.getZoom() + 1.5, 10)
+        })
+      }
+    })
+
     // Pointer cursor on both layers
     const pointerLayers = [TRAFFIC_CLUSTERS_LAYER_ID, TRAFFIC_COUNT_LAYER_ID]
     pointerLayers.forEach((layerId) => {
