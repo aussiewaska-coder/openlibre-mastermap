@@ -79,12 +79,15 @@ export default {
 
     // Click cluster -> zoom to show all contained markers
     map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
+      console.log('CLUSTER CLICKED')
       const cluster = e.features[0]
       const clusterId = cluster.properties.cluster_id
       const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
+      console.log('Cluster ID:', clusterId)
 
       // Get ALL leaves (individual points) in this cluster
       source.getClusterLeaves(clusterId, Infinity, 0, (error, features) => {
+        console.log('getClusterLeaves callback fired')
         if (error) {
           console.error('getClusterLeaves error:', error)
           return
@@ -95,17 +98,24 @@ export default {
           return
         }
 
+        console.log('Features found:', features.length)
+
         // Build bounds containing all points
         const coordinates = features.map(f => f.geometry.coordinates)
+        console.log('Coordinates:', coordinates)
+
         const bounds = coordinates.reduce((bounds, coord) => {
           return bounds.extend(coord)
         }, new maplibregl.LngLatBounds(coordinates[0], coordinates[0]))
+
+        console.log('Bounds:', bounds)
 
         // Zoom to fit all markers
         map.fitBounds(bounds, {
           padding: 100,
           maxZoom: 15
         })
+        console.log('fitBounds CALLED')
       })
     })
 
