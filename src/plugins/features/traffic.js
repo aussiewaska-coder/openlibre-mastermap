@@ -117,11 +117,18 @@ export default {
       const features = e.features
       const clusterId = features[0].properties.cluster_id
       
+      console.log('CLUSTER CLICKED:', clusterId)
+      
       map.getSource(TRAFFIC_CLUSTER_SOURCE_ID).getClusterExpansionZoom(
         clusterId,
         (err, zoom) => {
-          if (err) return
+          if (err) {
+            console.error('ERROR:', err)
+            return
+          }
 
+          console.log('ZOOMING TO:', zoom)
+          
           map.easeTo({
             center: features[0].geometry.coordinates,
             zoom: zoom
