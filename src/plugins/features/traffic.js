@@ -158,8 +158,10 @@ export default {
   setupInteractions() {
     const map = mapManager.getMap()
 
-    // Click on clustered features - fitBounds to show ALL markers in cluster
-    map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, async (e) => {
+    // Double-click on cluster - zoom to show ALL markers in cluster
+    map.on('dblclick', TRAFFIC_CLUSTERS_LAYER_ID, async (e) => {
+      e.preventDefault()  // Prevent default double-click zoom
+
       if (!e.features || e.features.length === 0) return
 
       const feature = e.features[0]
@@ -167,9 +169,9 @@ export default {
       const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
 
       try {
-        // Get all points in this cluster
+        // Get ALL points in this cluster (use large limit)
         const clusterLeaves = await new Promise((resolve, reject) => {
-          source.getClusterLeaves(clusterId, 1000, 0, (err, features) => {
+          source.getClusterLeaves(clusterId, 10000, 0, (err, features) => {
             if (err) reject(err)
             else resolve(features)
           })
@@ -177,26 +179,26 @@ export default {
 
         if (clusterLeaves.length === 0) return
 
-        // Calculate bounds that encompass all cluster markers
+        // Calculate bounds encompassing all cluster markers
         const bounds = new maplibregl.LngLatBounds()
         clusterLeaves.forEach(leaf => {
           bounds.extend(leaf.geometry.coordinates)
         })
 
-        // Fit map to show ALL markers in cluster
+        // Fit map to show ALL markers with UI padding
         map.fitBounds(bounds, {
           padding: {
-            top: 80,      // Space for controls
-            bottom: 200,  // Extra space for bottom sheet UI
-            left: 40,
-            right: 40
+            top: 100,      // Top controls
+            bottom: 250,   // Bottom sheet panel
+            left: 60,      // Left margin
+            right: 60      // Right margin
           },
-          maxZoom: 15,    // Don't zoom too close
-          duration: 800,  // Smooth animation
-          linear: false   // Use flyTo
+          maxZoom: 15,
+          duration: 600,
+          linear: true
         })
 
-        console.log(`✓ Cluster expanded: ${clusterLeaves.length} markers in view`)
+        console.log(`Cluster expanded: ${clusterLeaves.length} markers`)
 
       } catch (err) {
         console.error('Failed to expand cluster:', err)
@@ -235,9 +237,11 @@ export default {
 
     map.on('mouseenter', TRAFFIC_CLUSTERS_LAYER_ID, () => {
       map.getCanvas().style.cursor = 'zoom-in'
+      map.doubleClickZoom.disable()  // Allow our dblclick handler to fire
     })
     map.on('mouseleave', TRAFFIC_CLUSTERS_LAYER_ID, () => {
       map.getCanvas().style.cursor = ''
+      map.doubleClickZoom.enable()  // Restore default double-click zoom
     })
   },
 
