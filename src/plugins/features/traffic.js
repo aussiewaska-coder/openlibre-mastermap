@@ -131,23 +131,51 @@ export default {
           return
         }
 
-        source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+        console.log('DEBUG: Source found, type:', source.type)
+        console.log('DEBUG: Has getClusterLeaves?', typeof source.getClusterLeaves)
+        
+        // Get all individual points in this cluster
+        source.getClusterLeaves(clusterId, 100, 0, (err, features) => {
           if (err) {
-            console.error('Cluster expansion zoom error:', err)
+            console.error('Failed to get cluster leaves:', err)
             return
           }
 
-          console.log('Zooming to level:', zoom)
-          
-          // Zoom in much more to ensure individual markers are clearly visible
-          const targetZoom = Math.min(zoom + 4, 19)
-          
-          map.flyTo({
-            center: clickedFeature.geometry.coordinates,
-            zoom: targetZoom,
+          if (!features || features.length === 0) {
+            console.warn('No features found in cluster')
+            return
+          }
+
+          console.log(`✓ Cluster contains ${features.length} points, calculating bounds...`)
+
+          // Calculate bounding box from all point coordinates
+          let minLng = Infinity
+          let maxLng = -Infinity
+          let minLat = Infinity
+          let maxLat = -Infinity
+
+          features.forEach((feature) => {
+            const [lng, lat] = feature.geometry.coordinates
+            minLng = Math.min(minLng, lng)
+            maxLng = Math.max(maxLng, lng)
+            minLat = Math.min(minLat, lat)
+            maxLat = Math.max(maxLat, lat)
+          })
+
+          // Frame all constituent markers with padding
+          const bounds = [
+            [minLng, minLat], // southwest
+            [maxLng, maxLat], // northeast
+          ]
+
+          map.fitBounds(bounds, {
+            padding: { top: 80, bottom: 80, left: 80, right: 80 },
             duration: 800,
             pitch: 0,
+            maxZoom: 18, // Don't zoom in too far even for small clusters
           })
+
+          console.log('✓ Fitted bounds to show all cluster constituents')
         })
       }
     })
