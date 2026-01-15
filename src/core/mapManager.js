@@ -44,8 +44,21 @@ class MapManager {
       zoom: AUSTRALIA_VIEW.zoom,
       pitch: AUSTRALIA_VIEW.pitch,
       bearing: AUSTRALIA_VIEW.bearing,
-      maxPitch: MAP_CONFIG.maxPitch,
-      attributionControl: true
+      minZoom: AUSTRALIA_VIEW.zoom,
+      maxZoom: AUSTRALIA_VIEW.zoom,
+      maxPitch: AUSTRALIA_VIEW.pitch,
+      minPitch: AUSTRALIA_VIEW.pitch,
+      attributionControl: true,
+      interactive: false,
+      dragPan: false,
+      dragRotate: false,
+      scrollZoom: false,
+      boxZoom: false,
+      keyboard: false,
+      doubleClickZoom: false,
+      touchZoomRotate: false,
+      touchPitch: false,
+      pitchWithRotate: false
     })
 
     // Expose map for debugging
