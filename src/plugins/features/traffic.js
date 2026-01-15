@@ -115,26 +115,30 @@ export default {
     // Click on clustered features - zoom to show individual markers
     map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
       const features = e.features
-      const clusterId = features[0].properties.cluster_id
+      if (!features || features.length === 0) return
       
+      const clusterId = features[0].properties.cluster_id
       console.log('CLUSTER CLICKED:', clusterId)
       
-      map.getSource(TRAFFIC_CLUSTER_SOURCE_ID).getClusterExpansionZoom(
-        clusterId,
-        (err, zoom) => {
-          if (err) {
-            console.error('ERROR:', err)
-            return
-          }
-
-          console.log('ZOOMING TO:', zoom)
-          
-          map.easeTo({
-            center: features[0].geometry.coordinates,
-            zoom: zoom
-          })
+      const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
+      if (!source) {
+        console.error('Source not found')
+        return
+      }
+      
+      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+        if (err) {
+          console.error('getClusterExpansionZoom ERROR:', err)
+          return
         }
-      )
+
+        console.log('ZOOMING TO:', zoom)
+        
+        map.easeTo({
+          center: features[0].geometry.coordinates,
+          zoom: zoom
+        })
+      })
     })
 
     // Change cursor on hover
