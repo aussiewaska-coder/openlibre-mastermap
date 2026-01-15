@@ -41,8 +41,8 @@ export default {
       type: 'geojson',
       data: { type: 'FeatureCollection', features: [] },
       cluster: true,
-      clusterMaxZoom: 15,
-      clusterRadius: 50,
+      clusterMaxZoom: 13,
+      clusterRadius: 40,
     })
 
     // Cluster circles layer
@@ -85,14 +85,15 @@ export default {
       layout: {
         'text-field': ['get', 'icon'],
         'text-font': ['Arial Unicode MS Regular'],
-        'text-size': 22,
+        'text-size': 24,
         'text-allow-overlap': true,
         'text-ignore-placement': false,
       },
       paint: {
-        'text-opacity': ['case', ['boolean', ['feature-state', 'selected'], false], 1, 0.8],
+        'text-color': '#1f2937',
+        'text-opacity': ['case', ['boolean', ['feature-state', 'selected'], false], 1, 0.9],
         'text-halo-color': '#fff',
-        'text-halo-width': 1,
+        'text-halo-width': 2,
       },
     })
 
@@ -114,7 +115,7 @@ export default {
   setupInteractions() {
     const map = mapManager.getMap()
 
-    // Click on clustered features - zoom to cluster
+    // Click on clustered features - zoom to show individual markers
     map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
       const features = map.querySourceFeatures(TRAFFIC_CLUSTER_SOURCE_ID, {
         sourceLayer: '',
@@ -125,12 +126,16 @@ export default {
 
       if (feature && feature.properties.cluster_id != null) {
         const clusterId = feature.properties.cluster_id
+        // Get cluster expansion zoom to show individual markers
         map.getSource(TRAFFIC_CLUSTER_SOURCE_ID).getClusterExpansionZoom(clusterId, (err, zoom) => {
           if (err) return
-          map.easeTo({
+          // Zoom in a bit more to ensure individual markers are visible
+          const targetZoom = Math.min(zoom + 1, 18)
+          map.flyTo({
             center: feature.geometry.coordinates,
-            zoom: zoom,
-            duration: 500,
+            zoom: targetZoom,
+            duration: 600,
+            pitch: 0,
           })
         })
       }

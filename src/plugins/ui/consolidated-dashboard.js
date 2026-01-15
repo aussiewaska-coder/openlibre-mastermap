@@ -10,8 +10,12 @@ import mapManager from '../../core/mapManager.js'
 export default {
   panelEl: null,
   isOpen: true,
-  activeTab: 'traffic', // 'traffic' or 'police'
+  activeTab: 'traffic',
   trafficData: [],
+  activeFilters: {
+    types: ['POLICE'],
+    maxAgeMinutes: 60,
+  },
 
   initialize() {
     this.createSidebar()
@@ -67,11 +71,20 @@ export default {
         <div class="dashboard-filters">
           <label class="filter-label">Type:</label>
           <div class="filter-chips">
+            <button class="filter-chip active" data-filter="traffic-type" data-value="POLICE">🚔 Police</button>
             <button class="filter-chip" data-filter="traffic-type" data-value="ACCIDENT">🚗 Accident</button>
             <button class="filter-chip" data-filter="traffic-type" data-value="HAZARD">⚠️ Hazard</button>
-            <button class="filter-chip" data-filter="traffic-type" data-value="POLICE">🚔 Police</button>
             <button class="filter-chip" data-filter="traffic-type" data-value="CLOSURE">🚫 Closure</button>
             <button class="filter-chip" data-filter="traffic-type" data-value="JAM">🚦 Jam</button>
+          </div>
+
+          <label class="filter-label">Time Horizon:</label>
+          <div class="filter-chips">
+            <button class="time-chip active" data-time="60">1h</button>
+            <button class="time-chip" data-time="180">3h</button>
+            <button class="time-chip" data-time="360">6h</button>
+            <button class="time-chip" data-time="1440">24h</button>
+            <button class="time-chip" data-time="2880">48h</button>
           </div>
         </div>
 
@@ -109,6 +122,25 @@ export default {
       })
     })
 
+    // Type filter chips
+    this.panelEl.querySelectorAll('[data-filter="traffic-type"]').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        chip.classList.toggle('active')
+        this.updateActiveFilters()
+        this.renderTrafficResults()
+      })
+    })
+
+    // Time horizon chips
+    this.panelEl.querySelectorAll('.time-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        this.panelEl.querySelectorAll('.time-chip').forEach((c) => c.classList.remove('active'))
+        chip.classList.add('active')
+        this.activeFilters.maxAgeMinutes = parseInt(chip.dataset.time)
+        this.renderTrafficResults()
+      })
+    })
+
     // Scan button
     document.getElementById('traffic-scan-btn').addEventListener('click', () => {
       this.scanTraffic()
@@ -142,6 +174,13 @@ export default {
     this.panelEl.querySelectorAll('.tab-content').forEach((content) => {
       content.classList.toggle('active', content.dataset.tab === tab)
     })
+  },
+
+  updateActiveFilters() {
+    const activeTypes = Array.from(
+      this.panelEl.querySelectorAll('[data-filter="traffic-type"].active')
+    ).map((chip) => chip.dataset.value)
+    this.activeFilters.types = activeTypes
   },
 
   async scanTraffic() {
@@ -196,7 +235,35 @@ export default {
       return
     }
 
-    resultsEl.innerHTML = this.trafficData
+    // Apply filters
+    const now = Date.now()
+    const filteredData = this.trafficData.filter((item) => {
+      const props = item.properties
+
+      // Type filter
+      if (this.activeFilters.types.length > 0 && !this.activeFilters.types.includes(props.type)) {
+        return false
+      }
+
+      // Time filter
+      if (this.activeFilters.maxAgeMinutes) {
+        const publishedAt = new Date(props.publishedAt).getTime()
+        const ageMs = now - publishedAt
+        const ageMinutes = ageMs / (1000 * 60)
+        if (ageMinutes > this.activeFilters.maxAgeMinutes) {
+          return false
+        }
+      }
+
+      return true
+    })
+
+    if (filteredData.length === 0) {
+      resultsEl.innerHTML = '<div class="empty-state"><p>🔍 No results matching filters</p></div>'
+      return
+    }
+
+    resultsEl.innerHTML = filteredData
       .map((item) => {
         const props = item.properties
         const icon = props.icon || '📍'
