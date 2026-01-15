@@ -188,6 +188,34 @@ export default {
     }
 
     console.log(`✓ Traffic data updated: ${geoJSON.features.length} items`)
+
+    // Autofit to data so clusters are visible
+    this.fitToData(geoJSON)
+  },
+
+  fitToData(geoJSON) {
+    const map = mapManager.getMap()
+    if (!geoJSON?.features?.length || !map?.fitBounds) return
+
+    const coords = geoJSON.features
+      .map((f) => f.geometry && f.geometry.coordinates)
+      .filter(Boolean)
+    if (!coords.length) return
+
+    const lons = coords.map((c) => c[0])
+    const lats = coords.map((c) => c[1])
+    const west = Math.min(...lons)
+    const east = Math.max(...lons)
+    const south = Math.min(...lats)
+    const north = Math.max(...lats)
+
+    map.fitBounds(
+      [
+        [west, south],
+        [east, north]
+      ],
+      { padding: 80, duration: 800 }
+    )
   },
 
   enable() {
