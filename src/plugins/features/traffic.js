@@ -40,7 +40,6 @@ export default {
       cluster: true,
       clusterMaxZoom: 13,
       clusterRadius: 40,
-      generateId: true,
     })
 
     // Cluster circles layer
@@ -113,53 +112,18 @@ export default {
   setupInteractions() {
     const map = mapManager.getMap()
 
-    // Click on clustered features - zoom to fit ALL markers in cluster
+    // Click on clustered features - zoom to level 15 to uncluster
     map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
       if (!e.features || e.features.length === 0) return
       
-      const clusterId = e.features[0].properties.cluster_id
       const coords = e.features[0].geometry.coordinates
       
-      console.log('CLUSTER CLICKED:', clusterId)
+      console.log('CLUSTER CLICKED - ZOOMING TO UNCLUSTER')
       
-      const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
-      
-      // Get all points in this cluster
-      source.getClusterLeaves(clusterId, 100, 0, (err, leaves) => {
-        if (err) {
-          console.error('getClusterLeaves error:', err)
-          // Fallback: zoom to level 15
-          map.easeTo({ center: coords, zoom: 15, duration: 600 })
-          return
-        }
-        
-        if (!leaves || leaves.length === 0) {
-          console.warn('No leaves found')
-          map.easeTo({ center: coords, zoom: 15, duration: 600 })
-          return
-        }
-        
-        console.log(`Cluster has ${leaves.length} markers`)
-        
-        // Calculate bounding box
-        let minLng = Infinity, maxLng = -Infinity
-        let minLat = Infinity, maxLat = -Infinity
-        
-        leaves.forEach(leaf => {
-          const [lng, lat] = leaf.geometry.coordinates
-          minLng = Math.min(minLng, lng)
-          maxLng = Math.max(maxLng, lng)
-          minLat = Math.min(minLat, lat)
-          maxLat = Math.max(maxLat, lat)
-        })
-        
-        // Zoom to fit all markers
-        map.fitBounds(
-          [[minLng, minLat], [maxLng, maxLat]],
-          { padding: 100, duration: 800, maxZoom: 17 }
-        )
-        
-        console.log('ZOOMED TO FIT ALL MARKERS')
+      map.easeTo({
+        center: coords,
+        zoom: 15,
+        duration: 600
       })
     })
 
