@@ -184,52 +184,28 @@ export default {
     })
 
     // Handle dblclick on BOTH cluster layers (circle AND count text)
-    let isHandlingCluster = false  // Prevent double-firing
-    const handleClusterDblClick = async (e) => {
-      if (isHandlingCluster) return  // Already handling
+    let isHandlingCluster = false
+    const handleClusterDblClick = (e) => {
+      if (isHandlingCluster) return
       isHandlingCluster = true
 
-      console.log('%c[DEBUG] CLUSTER DBLCLICK HANDLER FIRED', 'color: purple; font-weight: bold')
-      e.preventDefault()
-
-      // Disable default zoom
-      map.doubleClickZoom.disable()
-
-      if (!e.features || e.features.length === 0) {
-        console.log('%c[DEBUG] No features in event', 'color: red')
+      const feature = e.features?.[0]
+      if (!feature) {
         isHandlingCluster = false
         return
       }
 
-      const feature = e.features[0]
-      const clusterId = feature.properties.cluster_id
-      console.log('%c[DEBUG] Cluster ID:', 'color: purple', clusterId, 'Feature:', feature)
+      const coords = feature.geometry.coordinates
+      console.log('ZOOMING TO:', coords)
 
-      const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
-      if (!source) {
-        console.error('[DEBUG] SOURCE NOT FOUND!')
-        isHandlingCluster = false
-        return
-      }
-      console.log('%c[DEBUG] Source found:', 'color: purple', source)
-
-      // Try getClusterExpansionZoom first (simpler approach)
-      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-        if (err) {
-          console.error('[DEBUG] getClusterExpansionZoom failed:', err)
-        } else {
-          console.log('%c[DEBUG] Expansion zoom:', 'color: green', zoom)
-          const coords = feature.geometry.coordinates
-          map.easeTo({
-            center: coords,
-            zoom: Math.min(zoom, 15),
-            duration: 500
-          })
-          console.log('%c[DEBUG] easeTo called!', 'color: green')
-        }
-        isHandlingCluster = false
-        map.doubleClickZoom.enable()
+      // Just zoom to the cluster location
+      map.flyTo({
+        center: coords,
+        zoom: map.getZoom() + 2,
+        duration: 800
       })
+
+      setTimeout(() => { isHandlingCluster = false }, 1000)
     }
 
     // Register on BOTH cluster layers
