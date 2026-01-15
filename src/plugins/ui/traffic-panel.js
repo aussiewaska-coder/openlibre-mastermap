@@ -209,11 +209,32 @@ export default {
     const bounds = map.getBounds()
     const zoom = map.getZoom()
 
-    const bbox = {
+    // Australia bounding box (conservative)
+    const AUSTRALIA_BOUNDS = {
+      west: 112.5,
+      east: 154.0,
+      south: -44.0,
+      north: -9.0,
+    }
+
+    // Clamp viewport to Australia bounds
+    let bbox = {
       w: bounds.getWest(),
       s: bounds.getSouth(),
       e: bounds.getEast(),
       n: bounds.getNorth(),
+    }
+
+    // Clamp to Australia
+    bbox.w = Math.max(bbox.w, AUSTRALIA_BOUNDS.west)
+    bbox.e = Math.min(bbox.e, AUSTRALIA_BOUNDS.east)
+    bbox.s = Math.max(bbox.s, AUSTRALIA_BOUNDS.south)
+    bbox.n = Math.min(bbox.n, AUSTRALIA_BOUNDS.north)
+
+    // Check if viewport is entirely outside Australia
+    if (bbox.w >= bbox.e || bbox.s >= bbox.n) {
+      this.showError('Scan area is outside Australia. Please pan to Australia first.')
+      return
     }
 
     this.isScanning = true
