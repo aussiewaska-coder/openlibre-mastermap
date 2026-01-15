@@ -65,11 +65,23 @@ body {
   width: 100%;
   height: 100vh;
   animation: mapFadeIn 3s ease-out forwards;
+  z-index: 10;
 }
 
 .maplibre-ctrl {
   background-color: rgba(255, 255, 255, 0.95);
   border-radius: 4px;
+}
+
+/* Ensure the map stays the primary interactive surface */
+.maplibregl-control-container {
+  pointer-events: auto !important;
+  z-index: 11;
+}
+
+/* Disable accidental click-capture from stray overlays */
+body > *:not(#map):not(.maplibregl-control-container) {
+  pointer-events: none !important;
 }
 
 /* Globe Control styling */
