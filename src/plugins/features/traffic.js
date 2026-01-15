@@ -112,17 +112,17 @@ export default {
   setupInteractions() {
     const map = mapManager.getMap()
 
-    // Click on clustered features - zoom to level 15 to uncluster
+    // Click on clustered features - zoom to level 14 (just above clusterMaxZoom 13)
     map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
       if (!e.features || e.features.length === 0) return
       
       const coords = e.features[0].geometry.coordinates
       
-      console.log('CLUSTER CLICKED - ZOOMING TO UNCLUSTER')
+      console.log('CLUSTER CLICKED - ZOOMING TO 14')
       
       map.easeTo({
         center: coords,
-        zoom: 15,
+        zoom: 14,
         duration: 600
       })
     })
