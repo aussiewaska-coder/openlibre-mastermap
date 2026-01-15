@@ -10,9 +10,6 @@ import imageryFeature from './plugins/features/imagery.js'
 import controlsPlugin from './plugins/features/controls.js'
 
 import trafficPlugin from './plugins/features/traffic.js'
-import consolidatedDashboard from './plugins/ui/consolidated-dashboard.js'
-import './plugins/ui/consolidated-dashboard.css'
-
 
 
 /**
@@ -44,9 +41,6 @@ async function initialize() {
     // 7. Expose traffic plugin globally
     window.trafficPlugin = trafficPlugin
 
-    // 8. Initialize consolidated dashboard (left sidebar)
-    consolidatedDashboard.initialize()
-
     
 
     
@@ -71,7 +65,6 @@ function cleanup() {
   stateManager.cleanup()
   terrainFeature.cleanup()
   trafficPlugin.cleanup()
-  consolidatedDashboard.cleanup()
   mapManager.destroy()
 }
 
