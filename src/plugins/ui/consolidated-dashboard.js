@@ -12,7 +12,6 @@ export default {
   isOpen: true,
   activeTab: 'traffic', // 'traffic' or 'police'
   trafficData: [],
-  policeData: [],
 
   initialize() {
     this.createSidebar()
@@ -36,11 +35,7 @@ export default {
       <div class="dashboard-tabs">
         <button class="tab-button active" data-tab="traffic">
           <span class="tab-icon">🚗</span>
-          <span class="tab-label">Traffic</span>
-        </button>
-        <button class="tab-button" data-tab="police">
-          <span class="tab-icon">🚓</span>
-          <span class="tab-label">Police</span>
+          <span class="tab-label">Traffic Intel</span>
         </button>
       </div>
 
@@ -89,54 +84,7 @@ export default {
         </div>
       </div>
 
-      <!-- Police Tab Content -->
-      <div class="tab-content" data-tab="police">
-        <!-- Status Bar -->
-        <div class="dashboard-status">
-          <div class="status-item">
-            <span class="status-label">Total:</span>
-            <span class="status-value" id="police-total">0</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Filtered:</span>
-            <span class="status-value" id="police-filtered">0</span>
-          </div>
-        </div>
 
-        <!-- Load Button -->
-        <button id="police-load-btn" class="btn btn-primary btn-full">
-          <span class="btn-icon">📍</span>
-          <span class="btn-text">Load Reports</span>
-        </button>
-        <div id="police-load-progress" class="scan-progress" style="display: none;">
-          <div class="progress-spinner"></div>
-          <span>Loading...</span>
-        </div>
-
-        <!-- Filters -->
-        <div class="dashboard-filters">
-          <label class="filter-label">Type:</label>
-          <div class="filter-chips">
-            <button class="filter-chip" data-filter="police-type" data-value="POLICE">🚔 Police</button>
-            <button class="filter-chip" data-filter="police-type" data-value="ACCIDENT">🚗 Accident</button>
-            <button class="filter-chip" data-filter="police-type" data-value="HAZARD">⚠️ Hazard</button>
-            <button class="filter-chip" data-filter="police-type" data-value="ROAD_CLOSED">🚫 Road Closed</button>
-            <button class="filter-chip" data-filter="police-type" data-value="JAM">🚦 Jam</button>
-          </div>
-          <label class="filter-label">
-            <input type="checkbox" id="police-sort-recency" checked />
-            Sort by Recency
-          </label>
-        </div>
-
-        <!-- Results List -->
-        <div class="dashboard-results" id="police-results">
-          <div class="empty-state">
-            <p>👀 No data yet</p>
-            <p class="empty-hint">Click "Load Reports" to fetch</p>
-          </div>
-        </div>
-      </div>
 
       <!-- Detail View (shared) -->
       <div class="dashboard-detail" id="dashboard-detail" style="display: none;">
@@ -161,12 +109,9 @@ export default {
       })
     })
 
-    // Scan/Load buttons
+    // Scan button
     document.getElementById('traffic-scan-btn').addEventListener('click', () => {
       this.scanTraffic()
-    })
-    document.getElementById('police-load-btn').addEventListener('click', () => {
-      this.loadPolice()
     })
 
     // Detail back button
@@ -177,9 +122,6 @@ export default {
     // Listen for external events
     document.addEventListener('trafficItemSelected', (e) => {
       this.showDetail('traffic', e.detail)
-    })
-    document.addEventListener('policeReportSelected', (e) => {
-      this.showDetail('police', e.detail)
     })
   },
 
@@ -244,47 +186,7 @@ export default {
     }
   },
 
-  async loadPolice() {
-    const policePlugin = window.policePlugin
-    if (!policePlugin) return
 
-    const map = mapManager.getMap()
-    const bounds = map.getBounds()
-
-    const AUSTRALIA_BOUNDS = { west: 112.5, east: 154.0, south: -44.0, north: -9.0 }
-    let bbox = {
-      w: Math.max(bounds.getWest(), AUSTRALIA_BOUNDS.west),
-      s: Math.max(bounds.getSouth(), AUSTRALIA_BOUNDS.south),
-      e: Math.min(bounds.getEast(), AUSTRALIA_BOUNDS.east),
-      n: Math.min(bounds.getNorth(), AUSTRALIA_BOUNDS.north),
-    }
-
-    if (bbox.w >= bbox.e || bbox.s >= bbox.n) {
-      alert('Load area is outside Australia')
-      return
-    }
-
-    this.updateProgressUI('police-load', true)
-
-    try {
-      const response = await fetch('/api/police-reports', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bbox, limit: 500 }),
-      })
-
-      const data = await response.json()
-      this.policeData = data.geojson.features || []
-      await policePlugin.updateReportData(data.geojson)
-      this.renderPoliceResults()
-      document.getElementById('police-total').textContent = this.policeData.length.toString()
-    } catch (error) {
-      console.error('Police load failed:', error)
-      alert('Load failed. Please try again.')
-    } finally {
-      this.updateProgressUI('police-load', false)
-    }
-  },
 
   renderTrafficResults() {
     const resultsEl = document.getElementById('traffic-results')
@@ -322,41 +224,7 @@ export default {
     })
   },
 
-  renderPoliceResults() {
-    const resultsEl = document.getElementById('police-results')
 
-    if (this.policeData.length === 0) {
-      resultsEl.innerHTML = '<div class="empty-state"><p>🔍 No results</p></div>'
-      return
-    }
-
-    resultsEl.innerHTML = this.policeData
-      .map((item) => {
-        const props = item.properties
-        const icon = props.icon || '📍'
-        const ageText = props.publishedAt ? this.getTimeAgo(new Date(props.publishedAt)) : 'Unknown'
-
-        return `
-          <div class="result-card" data-id="${props.alert_id}">
-            <div class="result-icon">${icon}</div>
-            <div class="result-info">
-              <div class="result-type">${props.type}</div>
-              <div class="result-location">${props.street || props.city || 'Unknown'}</div>
-              <div class="result-meta">${ageText}</div>
-            </div>
-          </div>
-        `
-      })
-      .join('')
-
-    resultsEl.querySelectorAll('.result-card').forEach((card) => {
-      card.addEventListener('click', () => {
-        const id = card.dataset.id
-        const item = this.policeData.find((f) => f.properties.alert_id === id)
-        if (item) this.showDetail('police', { feature: item, properties: item.properties })
-      })
-    })
-  },
 
   showDetail(source, data) {
     const { properties } = data

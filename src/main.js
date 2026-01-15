@@ -10,7 +10,6 @@ import imageryFeature from './plugins/features/imagery.js'
 import controlsPlugin from './plugins/features/controls.js'
 import animationsPlugin from './plugins/features/animations.js'
 import trafficPlugin from './plugins/features/traffic.js'
-import policePlugin from './plugins/features/police-reports.js'
 import consolidatedDashboard from './plugins/ui/consolidated-dashboard.js'
 import flightControlsPanel from './plugins/ui/flight-controls-panel.js'
 import './plugins/ui/consolidated-dashboard.css'
@@ -48,17 +47,13 @@ async function initialize() {
     // 6. Initialize Traffic Intel plugin (map layer only, no UI)
     trafficPlugin.initialize()
 
-    // 7. Initialize Police Reports plugin (map layer only, no UI)
-    policePlugin.initialize()
-
-    // 8. Expose plugins globally for interactions
+    // 7. Expose traffic plugin globally
     window.trafficPlugin = trafficPlugin
-    window.policePlugin = policePlugin
 
-    // 9. Initialize consolidated dashboard (left sidebar with tabs)
+    // 8. Initialize consolidated dashboard (left sidebar)
     consolidatedDashboard.initialize()
 
-    // 10. Initialize flight controls panel (left bottom panel)
+    // 9. Initialize flight controls panel (left bottom panel)
     flightControlsPanel.initialize()
 
     // 13. Setup box zoom → orbit feature
@@ -170,8 +165,8 @@ async function initialize() {
     window.animationsPlugin = animationsPlugin
 
     console.log('✓ MASTERMAP initialized successfully')
-    console.log('✓ Consolidated left sidebar dashboard active')
-    console.log('✓ Flight controls panel ready at bottom-left')
+    console.log('✓ Traffic Intel dashboard active (left sidebar)')
+    console.log('✓ Flight controls panel ready (bottom-left)')
   } catch (error) {
     console.error('Failed to initialize MASTERMAP:', error)
   }
@@ -185,7 +180,6 @@ function cleanup() {
   terrainFeature.cleanup()
   animationsPlugin.cleanup()
   trafficPlugin.cleanup()
-  policePlugin.cleanup()
   consolidatedDashboard.cleanup()
   flightControlsPanel.cleanup()
   if (currentBoxOrbit && currentBoxOrbit.isRunning()) {

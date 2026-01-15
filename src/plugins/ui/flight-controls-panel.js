@@ -3,8 +3,8 @@
  * Left-side panel for map animations and camera controls
  */
 
-import animationsPlugin from '../features/animations.js'
 import mapManager from '../../core/mapManager.js'
+import { orbitAroundPoint, addInterruptListeners } from '../../core/orbitAnimation.js'
 
 export default {
   panelEl: null,
@@ -118,12 +118,14 @@ export default {
     // Projection toggle
     document.getElementById('toggle-projection').addEventListener('click', () => {
       const currentProj = map.getProjection()
+      if (!currentProj || !currentProj.type) return
       const newProj = currentProj.type === 'globe' ? { type: 'mercator' } : { type: 'globe' }
       map.setProjection(newProj)
       this.updateProjectionButton()
     })
 
-    this.updateProjectionButton()
+    // Defer updateProjectionButton until map is ready
+    setTimeout(() => this.updateProjectionButton(), 100)
   },
 
   startOrbit() {
@@ -131,23 +133,20 @@ export default {
     const center = map.getCenter()
     const pitch = map.getPitch()
 
-    // Import orbit module
-    import('../../core/orbitAnimation.js').then(({ orbitAroundPoint, addInterruptListeners }) => {
-      const orbitControl = orbitAroundPoint({
-        center,
-        duration: 60000,
-        degreesPerSecond: 6,
-        pitch,
-        onStop: () => this.onOrbitStop(),
-      })
-
-      this.currentOrbit = orbitControl
-      addInterruptListeners(orbitControl)
-
-      // Update UI
-      document.getElementById('orbit-toggle').style.display = 'none'
-      document.getElementById('stop-orbit').style.display = 'flex'
+    const orbitControl = orbitAroundPoint({
+      center,
+      duration: 60000,
+      degreesPerSecond: 6,
+      pitch,
+      onStop: () => this.onOrbitStop(),
     })
+
+    this.currentOrbit = orbitControl
+    addInterruptListeners(orbitControl)
+
+    // Update UI
+    document.getElementById('orbit-toggle').style.display = 'none'
+    document.getElementById('stop-orbit').style.display = 'flex'
   },
 
   stopOrbit() {
@@ -166,7 +165,10 @@ export default {
   updateProjectionButton() {
     const map = mapManager.getMap()
     const btn = document.getElementById('toggle-projection')
-    const isGlobe = map.getProjection().type === 'globe'
+    if (!btn) return
+    const proj = map.getProjection()
+    if (!proj || !proj.type) return
+    const isGlobe = proj.type === 'globe'
     btn.textContent = isGlobe ? '🗺️ Mercator Mode' : '🌍 Globe Mode'
   },
 
