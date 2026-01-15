@@ -156,6 +156,65 @@ export default {
     map.setLayoutProperty(TRAFFIC_UNCLUSTERED_LAYER_ID, 'visibility', 'none')
   },
 
+  /**
+   * Load initial data so clusters exist even if UI is absent or API fails.
+   * Attempts live /api/scan first; falls back to baked demo data.
+   */
+  async loadInitialData() {
+    // Try live data if the API is available
+    try {
+      const resp = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bbox: { w: 112.5, s: -44.0, e: 154.0, n: -9.0 },
+          zoom: 5
+        })
+      })
+
+      if (resp.ok) {
+        const data = await resp.json()
+        if (data?.geojson?.features?.length) {
+          this.updateTrafficData(data.geojson)
+          console.log(`✓ Traffic data loaded from /api/scan (${data.geojson.features.length} features)`)
+          return
+        }
+      }
+    } catch (e) {
+      console.warn('Live traffic load failed, using demo data', e)
+    }
+
+    // Fallback demo data so clusters are interactive
+    const demo = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [151.2093, -33.8688] }, // Sydney
+          properties: { id: 'demo-1', type: 'ACCIDENT', icon: '🚗', publishedAt: new Date().toISOString() }
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [144.9631, -37.8136] }, // Melbourne
+          properties: { id: 'demo-2', type: 'HAZARD', icon: '⚠️', publishedAt: new Date().toISOString() }
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [153.026, -27.4698] }, // Brisbane
+          properties: { id: 'demo-3', type: 'POLICE', icon: '🚔', publishedAt: new Date().toISOString() }
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [115.8575, -31.9505] }, // Perth
+          properties: { id: 'demo-4', type: 'JAM', icon: '🚦', publishedAt: new Date().toISOString() }
+        }
+      ]
+    }
+
+    this.updateTrafficData(demo)
+    console.log('✓ Demo traffic data loaded (fallback)')
+  },
+
   cleanup() {
     const map = mapManager.getMap()
     try {

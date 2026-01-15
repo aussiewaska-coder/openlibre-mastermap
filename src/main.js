@@ -41,7 +41,10 @@ async function initialize() {
     // 7. Expose traffic plugin globally
     window.trafficPlugin = trafficPlugin
 
-    
+    // 8. Load initial traffic data (live /api/scan or demo fallback) so clusters exist
+    if (trafficPlugin.loadInitialData) {
+      trafficPlugin.loadInitialData()
+    }
 
     
 
