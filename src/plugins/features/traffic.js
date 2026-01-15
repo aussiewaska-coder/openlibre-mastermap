@@ -117,67 +117,20 @@ export default {
 
     // Click on clustered features - zoom to show individual markers
     map.on('click', TRAFFIC_CLUSTERS_LAYER_ID, (e) => {
-      if (!e.features || e.features.length === 0) return
+      const features = e.features
+      const clusterId = features[0].properties.cluster_id
+      
+      map.getSource(TRAFFIC_CLUSTER_SOURCE_ID).getClusterExpansionZoom(
+        clusterId,
+        (err, zoom) => {
+          if (err) return
 
-      const clickedFeature = e.features[0]
-      const clusterId = clickedFeature.properties.cluster_id
-
-      if (clusterId != null) {
-        console.log('✓ Cluster clicked:', clusterId)
-        
-        const source = map.getSource(TRAFFIC_CLUSTER_SOURCE_ID)
-        if (!source) {
-          console.error('Cluster source not found')
-          return
+          map.easeTo({
+            center: features[0].geometry.coordinates,
+            zoom: zoom
+          })
         }
-
-        console.log('DEBUG: Source found, type:', source.type)
-        console.log('DEBUG: Has getClusterLeaves?', typeof source.getClusterLeaves)
-        
-        // Get all individual points in this cluster
-        source.getClusterLeaves(clusterId, 100, 0, (err, features) => {
-          if (err) {
-            console.error('Failed to get cluster leaves:', err)
-            return
-          }
-
-          if (!features || features.length === 0) {
-            console.warn('No features found in cluster')
-            return
-          }
-
-          console.log(`✓ Cluster contains ${features.length} points, calculating bounds...`)
-
-          // Calculate bounding box from all point coordinates
-          let minLng = Infinity
-          let maxLng = -Infinity
-          let minLat = Infinity
-          let maxLat = -Infinity
-
-          features.forEach((feature) => {
-            const [lng, lat] = feature.geometry.coordinates
-            minLng = Math.min(minLng, lng)
-            maxLng = Math.max(maxLng, lng)
-            minLat = Math.min(minLat, lat)
-            maxLat = Math.max(maxLat, lat)
-          })
-
-          // Frame all constituent markers with padding
-          const bounds = [
-            [minLng, minLat], // southwest
-            [maxLng, maxLat], // northeast
-          ]
-
-          map.fitBounds(bounds, {
-            padding: { top: 80, bottom: 80, left: 80, right: 80 },
-            duration: 800,
-            pitch: 0,
-            maxZoom: 18, // Don't zoom in too far even for small clusters
-          })
-
-          console.log('✓ Fitted bounds to show all cluster constituents')
-        })
-      }
+      )
     })
 
     // Click on unclustered points - select and show detail
